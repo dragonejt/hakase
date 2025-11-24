@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  IMAGE_NAME: ${{ secrets.REGISTRY }}/${{ github.repository }}
+  IMAGE_NAME: ${{ secrets.REGISTRY }}/hakase
 
 jobs:
   deploy:
