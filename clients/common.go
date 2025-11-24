@@ -2,6 +2,8 @@
 package clients
 
 import (
+	"log/slog"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/palantir/stacktrace"
 	"gorm.io/gorm"
@@ -28,15 +30,13 @@ type DatabaseClient struct {
 
 type DiscordSession struct{}
 
-func MigrateDatabase(db *gorm.DB) error {
+func MigrateDatabase(db *gorm.DB) {
 	err := db.AutoMigrate(&Course{})
 	if err != nil {
-		return stacktrace.Propagate(err, "error migrating course model")
+		slog.Error(stacktrace.Propagate(err, "error migrating course model").Error())
 	}
 	err = db.AutoMigrate(&Assignment{})
 	if err != nil {
-		return stacktrace.Propagate(err, "error migrating assignment model")
+		slog.Error(stacktrace.Propagate(err, "error migrating assignment model").Error())
 	}
-
-	return nil
 }
