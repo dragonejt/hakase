@@ -36,7 +36,7 @@ jobs:
               --path . \
               --builder heroku/builder:24 \
               --tag ${{ env.IMAGE_NAME }}:${{ env.GIT_REV }} \
-              --publish
+            docker push --platform=linux/amd64 ${{ env.IMAGE_NAME }}:${{ env.GIT_REV }}
 
       - name: Create Sentry Release
         uses: getsentry/action-release@v3
