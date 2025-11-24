@@ -35,7 +35,7 @@ jobs:
             pack build ${{ env.IMAGE_NAME }} \
               --path . \
               --builder heroku/builder:24 \
-              --tag ${{ env.IMAGE_NAME }}:${{ env.GIT_REV }} \
+              --tag ${{ env.IMAGE_NAME }}:${{ env.GIT_REV }}
             docker push --platform=linux/amd64 ${{ env.IMAGE_NAME }}:${{ env.GIT_REV }}
 
       - name: Create Sentry Release
