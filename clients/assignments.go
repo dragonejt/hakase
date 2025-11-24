@@ -56,7 +56,7 @@ func (client *DatabaseClient) UpdateAssignment(span *sentry.Span, assignment Ass
 
 	_, err := gorm.G[Assignment](client.DB).Where("id = ?", assignment.ID).Updates(span.Context(), assignment)
 	if err != nil {
-		return Assignment{}, stacktrace.Propagate(err, "error updating assignment with id: %s", assignment.ID)
+		return Assignment{}, stacktrace.Propagate(err, "error updating assignment with id: %d", assignment.ID)
 	}
 
 	return gorm.G[Assignment](client.DB).Where("id = ?", assignment.ID).First(span.Context())
