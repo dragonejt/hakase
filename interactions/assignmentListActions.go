@@ -73,10 +73,21 @@ func AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.In
 		return
 	}
 
+	course, err := hakaseClient.ReadCourse(transaction, interactionCreate.GuildID)
+	if err != nil {
+		_, err := bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
+			Content: fmt.Sprintf("error reading course: %s", err.Error()),
+		})
+		if err != nil {
+			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
+		}
+		return
+	}
+
 	assignment := clients.Assignment{
-		Name:     assignmentData.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value,
-		Due:      due,
-		CourseID: interactionCreate.GuildID,
+		Name:   assignmentData.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value,
+		Due:    due,
+		Course: course,
 	}
 
 	if assignmentData.Components[2].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value != "" {
@@ -93,7 +104,7 @@ func AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.In
 		return
 	}
 
-	createdAssignment, err := hakaseClient.Backend.CreateAssignment(transaction, assignment)
+	createdAssignment, err := hakaseClient.CreateAssignment(transaction, assignment)
 	if err != nil {
 		_, err := bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
 			Content: err.Error(),
@@ -104,18 +115,6 @@ func AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.In
 		}
 		return
 	}
-
-	go hakaseClient.Notifications.PublishAssignmentNotification(transaction, clients.AssignmentNotification{
-		AssignmentID: createdAssignment.ID,
-		CourseID:     interactionCreate.GuildID,
-		Before:       time.Hour,
-	})
-
-	go hakaseClient.Notifications.PublishAssignmentNotification(transaction, clients.AssignmentNotification{
-		AssignmentID: createdAssignment.ID,
-		CourseID:     interactionCreate.GuildID,
-		Before:       time.Hour * 24,
-	})
 
 	_, err = bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
 		Content:    "assignment created!",

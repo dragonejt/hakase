@@ -19,9 +19,9 @@ func GuildCreate(bot *discordgo.Session, guildCreate *discordgo.GuildCreate, hak
 	slog.Info(fmt.Sprintf("added to guild: %s (%s)", guildCreate.Name, guildCreate.ID))
 
 	course := clients.Course{
-		CourseID: guildCreate.ID,
+		GuildID: guildCreate.ID,
 	}
-	err := hakaseClient.Backend.CreateCourse(transaction, course)
+	err := hakaseClient.CreateCourse(transaction, course)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to create course").Error())
 	}
@@ -38,7 +38,7 @@ func GuildDelete(bot *discordgo.Session, guildDelete *discordgo.GuildDelete, hak
 	defer transaction.Finish()
 	slog.Info(fmt.Sprintf("removed from guild: %s (%s)", guildDelete.Name, guildDelete.ID))
 
-	err := hakaseClient.Backend.DeleteCourse(transaction, guildDelete.ID)
+	err := hakaseClient.DeleteCourse(transaction, guildDelete.ID)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to delete course").Error())
 	}

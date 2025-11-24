@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
@@ -19,7 +18,9 @@ import (
 	"github.com/dragonejt/hakase-discord/interactions"
 	"github.com/dragonejt/hakase-discord/settings"
 	"github.com/getsentry/sentry-go"
+	"github.com/kofj/gorm-driver-d1/gormd1"
 	"github.com/palantir/stacktrace"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -50,25 +51,19 @@ func main() {
 	}
 	bot.StateEnabled = true
 
-	hakaseClient := clients.HakaseClient{
-		Backend: &clients.APIClient{
-			Url:        settings.BACKEND_URL,
-			APIKey:     settings.BACKEND_API_KEY,
-			HttpClient: bot.Client,
-		},
-		Notifications: &clients.MQClient{
-			NATSUrl:    settings.NATS_URL,
-			StreamName: settings.STREAM_NAME,
-			PublisherPool: sync.Pool{
-				New: func() any {
-					return clients.CreateStreamConnection(settings.NATS_URL)
-				},
-			},
-		},
+	slog.Info(fmt.Sprintf("d1://%s:%s@%s", settings.CF_ACCOUNT_ID, settings.CF_API_TOKEN, settings.D1_DATABASE_ID))
+	open := gormd1.Open(fmt.Sprintf("d1://%s:%s@%s", settings.CF_ACCOUNT_ID, settings.CF_API_TOKEN, settings.D1_DATABASE_ID))
+	db, err := gorm.Open(open)
+	if err != nil {
+		slog.Error(stacktrace.Propagate(err, "failed to connect to cloudflare d1").Error())
+		return
+	}
+	go clients.MigrateDatabase(db)
+	hakaseClient := &clients.DatabaseClient{
+		DB: db,
 	}
 
 	stopListener := make(chan bool, 1)
-	go hakaseClient.Notifications.ListenToStream(bot, hakaseClient.Backend, stopListener)
 
 	err = bot.Open()
 	if err != nil {

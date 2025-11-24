@@ -18,8 +18,6 @@ func Ready(bot *discordgo.Session, ready *discordgo.Ready, hakaseClient clients.
 	defer transaction.Finish()
 	slog.Info(fmt.Sprintf("logged in as %s", ready.User.String()))
 
-	hakaseClient.Notifications.PublishNotification(transaction, fmt.Sprintf("logged in as %s", ready.User.String()))
-
 	err := bot.UpdateCustomStatus(fmt.Sprintf("assisting %d classes", len(bot.State.Guilds)))
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to update status").Error())

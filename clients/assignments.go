@@ -2,226 +2,74 @@
 package clients
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
 	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/palantir/stacktrace"
+	"gorm.io/gorm"
 )
 
 type Assignment struct {
-	ID       int       `json:"id,omitempty"`
-	Course   int       `json:"course,omitempty"`
-	CourseID string    `json:"course_id,omitempty"`
-	Name     string    `json:"name,omitempty"`
-	Due      time.Time `json:"due,omitempty"`
-	Link     string    `json:"link,omitempty"`
+	gorm.Model
+	Course Course `gorm:"foreignKey:ID;references:ID"`
+	Name   string
+	Due    time.Time `gorm:"column:delete_time"`
+	Link   string
 }
 
 // ReadAssignment retrieves an assignment by its ID from the backend.
-func (backend *APIClient) ReadAssignment(span *sentry.Span, assignmentID string) (Assignment, error) {
+func (client *DatabaseClient) ReadAssignment(span *sentry.Span, assignmentID string) (Assignment, error) {
 	span = span.StartChild("readAssignment")
 	defer span.Finish()
 
-	assignment := Assignment{}
-
-	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/assignments?id=%s", backend.Url, assignmentID), nil)
-	if err != nil {
-		return assignment, stacktrace.Propagate(err, "failed to create API request")
-	}
-	request.Header.Add("accept", "application/json")
-	request.Header.Add("authorization", fmt.Sprintf("Token %s", backend.APIKey))
-	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
-	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
-
-	response, err := backend.HttpClient.Do(request)
-	if err != nil {
-		return assignment, stacktrace.Propagate(err, "failed to execute API request")
-	}
-	if response.StatusCode != http.StatusOK {
-		return assignment, stacktrace.Propagate(err, "failed status code API response: %d", response.StatusCode)
-	}
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return assignment, stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
-	}
-
-	err = json.Unmarshal(body, &assignment)
-	if err != nil {
-		return assignment, stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
-	}
-
-	return assignment, nil
-}
-
-// HeadAssignment checks if an assignment exists in the backend.
-func (backend *APIClient) HeadAssignment(span *sentry.Span, assignmentID string) error {
-	span = span.StartChild("headAssignment")
-	defer span.Finish()
-
-	request, err := http.NewRequest(http.MethodHead, fmt.Sprintf("%s/assignments?id=%s", backend.Url, assignmentID), nil)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to create API request")
-	}
-	request.Header.Add("accept", "application/json")
-	request.Header.Add("authorization", fmt.Sprintf("Token %s", backend.APIKey))
-	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
-	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
-
-	response, err := backend.HttpClient.Do(request)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to execute API request")
-	}
-	if response.StatusCode != http.StatusOK {
-		return stacktrace.Propagate(err, "failed status code API response: %d", response.StatusCode)
-	}
-
-	return nil
+	return gorm.G[Assignment](client.DB).Where("id = ?", assignmentID).First(span.Context())
 }
 
 // ListAssignments lists all assignments for a course.
-func (backend *APIClient) ListAssignments(span *sentry.Span, courseID string) ([]Assignment, error) {
+func (client *DatabaseClient) ListAssignments(span *sentry.Span, guildID string) ([]Assignment, error) {
 	span = span.StartChild("listAssignments")
 	defer span.Finish()
 
-	assignments := []Assignment{}
-
-	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/assignments?course_id=%s", backend.Url, courseID), nil)
+	course, err := gorm.G[Course](client.DB).Where("guild_id = ?", guildID).First(span.Context())
 	if err != nil {
-		return assignments, stacktrace.Propagate(err, "failed to create API request")
-	}
-	request.Header.Add("accept", "application/json")
-	request.Header.Add("authorization", fmt.Sprintf("Token %s", backend.APIKey))
-	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
-	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
-
-	response, err := backend.HttpClient.Do(request)
-	if err != nil {
-		return assignments, stacktrace.Propagate(err, "failed to execute API request")
-	}
-	if response.StatusCode != http.StatusOK {
-		return assignments, stacktrace.Propagate(err, "failed status code API response: %d", response.StatusCode)
+		return []Assignment{}, stacktrace.Propagate(err, "error reading course by guild id: %s", guildID)
 	}
 
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return assignments, stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
-	}
-
-	err = json.Unmarshal(body, &assignments)
-	if err != nil {
-		return assignments, stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
-	}
-
-	return assignments, nil
+	return gorm.G[Assignment](client.DB).Where("course_id = ?", course.ID).Find(span.Context())
 }
 
 // CreateAssignment creates a new assignment in the backend.
-func (backend *APIClient) CreateAssignment(span *sentry.Span, assignment Assignment) (Assignment, error) {
-	span = span.StartChild("createAssignment")
-	defer span.Finish()
+func (client *DatabaseClient) CreateAssignment(span *sentry.Span, assignment Assignment) (Assignment, error) {
 
-	jsonBody, err := json.Marshal(assignment)
+	err := gorm.G[Assignment](client.DB).Create(span.Context(), &assignment)
 	if err != nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to marshal assignment")
+		return Assignment{}, stacktrace.Propagate(err, "error creating assignment in course: %s", assignment.Course.GuildID)
 	}
 
-	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/assignments", backend.Url), bytes.NewReader(jsonBody))
-	if err != nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to create API request")
-	}
-	request.Header.Add("accept", "application/json")
-	request.Header.Add("content-type", "application/json")
-	request.Header.Add("authorization", fmt.Sprintf("Token %s", backend.APIKey))
-	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
-	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
-
-	response, err := backend.HttpClient.Do(request)
-	if err != nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to execute API request")
-	}
-	if response.StatusCode != http.StatusCreated {
-		return Assignment{}, stacktrace.Propagate(err, "failed status code API response: %d", response.StatusCode)
-	}
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
-	}
-
-	err = json.Unmarshal(body, &assignment)
-	if err != nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
-	}
-
-	return assignment, nil
+	return gorm.G[Assignment](client.DB).Where("id = ?", assignment.ID).First(span.Context())
 }
 
 // UpdateAssignment updates an existing assignment in the backend.
-func (backend *APIClient) UpdateAssignment(span *sentry.Span, assignment Assignment) (Assignment, error) {
+func (client *DatabaseClient) UpdateAssignment(span *sentry.Span, assignment Assignment) (Assignment, error) {
 	span = span.StartChild("updateAssignment")
 	defer span.Finish()
 
-	jsonBody, err := json.Marshal(assignment)
+	_, err := gorm.G[Assignment](client.DB).Where("id = ?", assignment.ID).Updates(span.Context(), assignment)
 	if err != nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to marshal assignment")
+		return Assignment{}, stacktrace.Propagate(err, "error updating assignment with id: %s", assignment.ID)
 	}
 
-	request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/assignments", backend.Url), bytes.NewReader(jsonBody))
-	if err != nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to create API request")
-	}
-	request.Header.Add("accept", "application/json")
-	request.Header.Add("content-type", "application/json")
-	request.Header.Add("authorization", fmt.Sprintf("Token %s", backend.APIKey))
-	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
-	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
-
-	response, err := backend.HttpClient.Do(request)
-	if err != nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to execute API request")
-	}
-	if response.StatusCode != http.StatusAccepted {
-		return Assignment{}, stacktrace.Propagate(err, "failed status code API response: %d", response.StatusCode)
-	}
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
-	}
-
-	err = json.Unmarshal(body, &assignment)
-	if err != nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
-	}
-
-	return assignment, nil
+	return gorm.G[Assignment](client.DB).Where("id = ?", assignment.ID).First(span.Context())
 }
 
 // DeleteAssignment deletes an assignment from the backend.
-func (backend *APIClient) DeleteAssignment(span *sentry.Span, assignmentID string) error {
+func (client *DatabaseClient) DeleteAssignment(span *sentry.Span, assignmentID string) error {
 	span = span.StartChild("deleteAssignment")
 	defer span.Finish()
 
-	request, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/assignments?id=%s", backend.Url, assignmentID), nil)
+	_, err := gorm.G[Assignment](client.DB).Where("id = ?", assignmentID).Delete(span.Context())
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to create API request")
-	}
-	request.Header.Add("authorization", fmt.Sprintf("Token %s", backend.APIKey))
-	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
-	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
-
-	response, err := backend.HttpClient.Do(request)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to execute API request")
-	}
-	if response.StatusCode != http.StatusNoContent {
-		return stacktrace.Propagate(err, "failed status code API response: %d", response.StatusCode)
+		return stacktrace.Propagate(err, "error deleting assignment with id: %s", assignmentID)
 	}
 
 	return nil

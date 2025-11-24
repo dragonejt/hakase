@@ -2,187 +2,54 @@
 package clients
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-
 	"github.com/getsentry/sentry-go"
 	"github.com/palantir/stacktrace"
+	"gorm.io/gorm"
 )
 
 type Course struct {
-	ID            int    `json:"id,omitempty"`
-	Platform      int    `json:"platform,omitempty"`
-	CourseID      string `json:"course_id"`
-	NotifyChannel string `json:"notify_channel,omitempty"`
-	NotifyGroup   string `json:"notify_group,omitempty"`
+	gorm.Model
+	GuildID       string `gorm:"unique"`
+	NotifyChannel string
+	NotifyGroup   string
 }
 
 // ReadCourse retrieves a course by its ID from the backend.
-func (backend *APIClient) ReadCourse(span *sentry.Span, courseID string) (Course, error) {
+func (client *DatabaseClient) ReadCourse(span *sentry.Span, guildID string) (Course, error) {
 	span = span.StartChild("readCourse")
 	defer span.Finish()
 
-	course := Course{}
-
-	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/courses?course_id=%s", backend.Url, courseID), nil)
-	if err != nil {
-		return course, stacktrace.Propagate(err, "failed to create API request")
-	}
-	request.Header.Add("accept", "application/json")
-	request.Header.Add("authorization", fmt.Sprintf("Token %s", backend.APIKey))
-	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
-	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
-
-	response, err := backend.HttpClient.Do(request)
-	if err != nil {
-		return course, stacktrace.Propagate(err, "failed to execute API request")
-	}
-	if response.StatusCode != http.StatusOK {
-		return course, stacktrace.Propagate(err, "failed status code API response: %d", response.StatusCode)
-	}
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return course, stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
-	}
-
-	err = json.Unmarshal(body, &course)
-	if err != nil {
-		return course, stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
-	}
-
-	return course, nil
-}
-
-// HeadCourse checks if a course exists in the backend.
-func (backend *APIClient) HeadCourse(span *sentry.Span, courseID string) error {
-	span = span.StartChild("headCourse")
-	defer span.Finish()
-
-	request, err := http.NewRequest(http.MethodHead, fmt.Sprintf("%s/courses?course_id=%s", backend.Url, courseID), nil)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to create API request")
-	}
-	request.Header.Add("accept", "application/json")
-	request.Header.Add("authorization", fmt.Sprintf("Token %s", backend.APIKey))
-	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
-	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
-
-	response, err := backend.HttpClient.Do(request)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to execute API request")
-	}
-	if response.StatusCode != http.StatusOK {
-		return stacktrace.Propagate(err, "failed status code API response: %d", response.StatusCode)
-	}
-
-	return nil
+	return gorm.G[Course](client.DB).Where("guild_id = ?", guildID).First(span.Context())
 }
 
 // CreateCourse creates a new course in the backend.
-func (backend *APIClient) CreateCourse(span *sentry.Span, course Course) error {
+func (client *DatabaseClient) CreateCourse(span *sentry.Span, course Course) error {
 	span = span.StartChild("createCourse")
 	defer span.Finish()
 
-	jsonBody, err := json.Marshal(course)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to marshal course")
-	}
-
-	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/courses", backend.Url), bytes.NewReader(jsonBody))
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to create API request")
-	}
-	request.Header.Add("accept", "application/json")
-	request.Header.Add("content-type", "application/json")
-	request.Header.Add("authorization", fmt.Sprintf("Token %s", backend.APIKey))
-	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
-	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
-
-	response, err := backend.HttpClient.Do(request)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to execute API request")
-	}
-	if response.StatusCode != http.StatusCreated {
-		return stacktrace.Propagate(err, "failed status code API response: %d", response.StatusCode)
-	}
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
-	}
-
-	err = json.Unmarshal(body, &course)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
-	}
-
-	return nil
+	return gorm.G[Course](client.DB).Create(span.Context(), &course)
 }
 
 // UpdateCourse updates an existing course in the backend.
-func (backend *APIClient) UpdateCourse(span *sentry.Span, course Course) error {
+func (client *DatabaseClient) UpdateCourse(span *sentry.Span, course Course) error {
 	span = span.StartChild("updateCourse")
 	defer span.Finish()
 
-	jsonBody, err := json.Marshal(course)
+	_, err := gorm.G[Course](client.DB).Where("guild_id = ?", course.GuildID).Updates(span.Context(), course)
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to marshal course")
+		return stacktrace.Propagate(err, "error updating course with guild id: %s", course.GuildID)
 	}
-
-	request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/courses", backend.Url), bytes.NewReader(jsonBody))
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to create API request")
-	}
-	request.Header.Add("accept", "application/json")
-	request.Header.Add("content-type", "application/json")
-	request.Header.Add("authorization", fmt.Sprintf("Token %s", backend.APIKey))
-	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
-	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
-
-	response, err := backend.HttpClient.Do(request)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to execute API request")
-	}
-	if response.StatusCode != http.StatusAccepted {
-		return stacktrace.Propagate(err, "failed status code API response: %d", response.StatusCode)
-	}
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
-	}
-
-	err = json.Unmarshal(body, &course)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
-	}
-
 	return nil
 }
 
 // DeleteCourse deletes a course from the backend.
-func (backend *APIClient) DeleteCourse(span *sentry.Span, courseID string) error {
+func (client *DatabaseClient) DeleteCourse(span *sentry.Span, guildID string) error {
 	span = span.StartChild("deleteCourse")
 	defer span.Finish()
 
-	request, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/courses?course_id=%s", backend.Url, courseID), nil)
+	_, err := gorm.G[Course](client.DB).Where("guild_id = ?", guildID).Delete(span.Context())
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to create API request")
-	}
-	request.Header.Add("authorization", fmt.Sprintf("Token %s", backend.APIKey))
-	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
-	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
-
-	response, err := backend.HttpClient.Do(request)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to execute API request")
-	}
-	if response.StatusCode != http.StatusNoContent {
-		return stacktrace.Propagate(err, "failed status code API response: %d", response.StatusCode)
+		return stacktrace.Propagate(err, "error deleting course with guild id: %s", guildID)
 	}
 
 	return nil
