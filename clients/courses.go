@@ -9,7 +9,7 @@ import (
 
 type Course struct {
 	gorm.Model
-	GuildID       string `gorm:"unique"`
+	GuildID       string `gorm:"uniqueIndex"`
 	NotifyChannel string
 	NotifyGroup   string
 }

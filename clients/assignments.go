@@ -11,10 +11,11 @@ import (
 
 type Assignment struct {
 	gorm.Model
-	Course Course `gorm:"foreignKey:ID;references:ID"`
-	Name   string
-	Due    time.Time `gorm:"column:delete_time"`
-	Link   string
+	CourseID string
+	Course   Course
+	Name     string
+	Due      time.Time `gorm:"column:delete_time"`
+	Link     string
 }
 
 // ReadAssignment retrieves an assignment by its ID from the backend.

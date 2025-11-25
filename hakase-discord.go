@@ -9,8 +9,6 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/dragonejt/hakase-discord/clients"
@@ -51,9 +49,10 @@ func main() {
 	}
 	bot.StateEnabled = true
 
-	slog.Info(fmt.Sprintf("d1://%s:%s@%s", settings.CF_ACCOUNT_ID, settings.CF_API_TOKEN, settings.D1_DATABASE_ID))
 	open := gormd1.Open(fmt.Sprintf("d1://%s:%s@%s", settings.CF_ACCOUNT_ID, settings.CF_API_TOKEN, settings.D1_DATABASE_ID))
-	db, err := gorm.Open(open)
+	db, err := gorm.Open(open, &gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to connect to cloudflare d1").Error())
 		return
@@ -63,13 +62,12 @@ func main() {
 		DB: db,
 	}
 
-	stopListener := make(chan bool, 1)
-
 	err = bot.Open()
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to open discord session").Error())
 		return
 	}
+	defer bot.Close()
 
 	slog.Info("registering event handlers")
 	bot.AddHandler(func(bot *discordgo.Session, ready *discordgo.Ready) {
@@ -96,14 +94,5 @@ func main() {
 		}
 	}
 
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
-	<-sc
-
-	stopListener <- true
-
-	err = bot.Close()
-	if err != nil {
-		slog.Error(stacktrace.Propagate(err, "failed to close discord session").Error())
-	}
+	select {}
 }
