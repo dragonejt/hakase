@@ -39,7 +39,7 @@ func main() {
 		if err != nil {
 			slog.Warn(fmt.Sprintf("error initiating sentry: %s", err))
 		}
-		slog.SetDefault(slog.New(slog.NewJSONHandler(io.MultiWriter(os.Stderr, sentry.NewLogger(context.Background())), &slog.HandlerOptions{AddSource: true})))
+		slog.SetDefault(slog.New(slog.NewJSONHandler(io.MultiWriter(os.Stdout, sentry.NewLogger(context.Background())), &slog.HandlerOptions{AddSource: true})))
 	}
 
 	bot, err := discordgo.New(fmt.Sprintf("Bot %s", settings.DISCORD_BOT_TOKEN))

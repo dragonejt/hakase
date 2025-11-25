@@ -11,7 +11,7 @@ import (
 
 type Assignment struct {
 	gorm.Model
-	CourseID string
+	CourseID uint
 	Course   Course
 	Name     string
 	Due      time.Time `gorm:"column:delete_time"`
