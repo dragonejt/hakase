@@ -43,6 +43,6 @@ jobs:
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: dragonejt
-          SENTRY_PROJECT: hakase-discord
+          SENTRY_PROJECT: hakase
         with:
           environment: production
