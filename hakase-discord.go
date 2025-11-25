@@ -67,7 +67,6 @@ func main() {
 		slog.Error(stacktrace.Propagate(err, "failed to open discord session").Error())
 		return
 	}
-	defer bot.Close()
 
 	slog.Info("registering event handlers")
 	bot.AddHandler(func(bot *discordgo.Session, ready *discordgo.Ready) {
