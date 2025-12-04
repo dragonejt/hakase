@@ -20,7 +20,7 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Setup Go
       uses: actions/setup-go@v6
@@ -34,7 +34,7 @@ jobs:
       run: go run gotest.tools/gotestsum@latest --packages="./..." --junitfile junit.xml -- -coverpkg=./... -coverprofile=coverage.txt
 
     - name: Lint Project and Check Formatting
-      uses: golangci/golangci-lint-action@v8
+      uses: golangci/golangci-lint-action@v9
       with:
         version: latest
     
@@ -63,7 +63,7 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       
     - name: Setup Go
       uses: actions/setup-go@v6
@@ -71,14 +71,14 @@ jobs:
         go-version: stable
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: go
 
     - name: AutoBuild
-      uses: github/codeql-action/autobuild@v3
+      uses: github/codeql-action/autobuild@v4
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4
       with:
         category: /language:go
