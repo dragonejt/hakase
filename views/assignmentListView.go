@@ -20,7 +20,7 @@ func AssignmentsListView(member *discordgo.Member, assignments []clients.Assignm
 
 	for _, assignment := range assignments {
 		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-			Name:   fmt.Sprintf("id: %d", assignment.ID),
+			Name:   fmt.Sprintf("id: %s", assignment.ID),
 			Value:  assignment.Name,
 			Inline: true,
 		})

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"os"
 
 	"github.com/bwmarrin/discordgo"
@@ -16,9 +17,7 @@ import (
 	"github.com/dragonejt/hakase-discord/interactions"
 	"github.com/dragonejt/hakase-discord/settings"
 	"github.com/getsentry/sentry-go"
-	"github.com/kofj/gorm-driver-d1/gormd1"
 	"github.com/palantir/stacktrace"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -49,17 +48,13 @@ func main() {
 	}
 	bot.StateEnabled = true
 
-	open := gormd1.Open(fmt.Sprintf("d1://%s:%s@%s", settings.CF_ACCOUNT_ID, settings.CF_API_TOKEN, settings.D1_DATABASE_ID))
-	db, err := gorm.Open(open, &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-	})
+	hakaseClient, err := clients.NewClientWithResponses(settings.FOUNDRY_URL, clients.WithHTTPClient(bot.Client), clients.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", settings.FOUNDRY_TOKEN))
+		return nil
+	}))
 	if err != nil {
-		slog.Error(stacktrace.Propagate(err, "failed to connect to cloudflare d1").Error())
+		slog.Error(stacktrace.Propagate(err, "failed to create ontology client").Error())
 		return
-	}
-	go clients.MigrateDatabase(db)
-	hakaseClient := &clients.DatabaseClient{
-		DB: db,
 	}
 
 	err = bot.Open()

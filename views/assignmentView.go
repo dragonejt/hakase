@@ -16,8 +16,8 @@ func AssignmentView(member *discordgo.Member, assignment clients.Assignment) *di
 		Title:       assignment.Name,
 		Description: fmt.Sprintf("due %s", assignment.Due.Format(time.RFC1123)),
 		Author:      &discordgo.MessageEmbedAuthor{Name: member.User.Username, IconURL: member.User.AvatarURL("")},
-		URL:         assignment.Link,
-		Footer:      &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("id %d", assignment.ID)},
+		URL:         assignment.URL,
+		Footer:      &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("id %s", assignment.ID)},
 	}
 }
 
@@ -31,7 +31,7 @@ func AssignmentActions(assignment clients.Assignment) *discordgo.ActionsRow {
 				},
 				Label:    "edit",
 				Style:    discordgo.PrimaryButton,
-				CustomID: fmt.Sprintf("updateAssignmentAction_%d", assignment.ID),
+				CustomID: fmt.Sprintf("updateAssignmentAction_%s", assignment.ID),
 			},
 			discordgo.Button{
 				Emoji: &discordgo.ComponentEmoji{
@@ -39,7 +39,7 @@ func AssignmentActions(assignment clients.Assignment) *discordgo.ActionsRow {
 				},
 				Label:    "remove",
 				Style:    discordgo.SecondaryButton,
-				CustomID: fmt.Sprintf("deleteAssignmentAction_%d", assignment.ID),
+				CustomID: fmt.Sprintf("deleteAssignmentAction_%s", assignment.ID),
 			},
 		},
 	}
@@ -56,7 +56,7 @@ func AssignmentModal(assignment *clients.Assignment) []discordgo.MessageComponen
 			// placeholder data
 			Name: "Assignment 1",
 			Due:  time.Now(),
-			Link: "https://canvas.instructure.com",
+			URL:  "https://canvas.instructure.com",
 		}
 	}
 	return []discordgo.MessageComponent{
@@ -90,7 +90,7 @@ func AssignmentModal(assignment *clients.Assignment) []discordgo.MessageComponen
 					CustomID:    "assignmentLink",
 					Label:       "link:",
 					Style:       discordgo.TextInputShort,
-					Placeholder: assignment.Link,
+					Placeholder: assignment.URL,
 					Required:    false,
 					MaxLength:   50,
 				},

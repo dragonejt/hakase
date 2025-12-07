@@ -102,7 +102,7 @@ func UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo
 	}
 
 	if assignmentData.Components[2].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value != "" {
-		assignment.Link = assignmentData.Components[2].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value
+		assignment.URL = assignmentData.Components[2].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value
 	}
 
 	currentAssignment, err := hakaseClient.ReadAssignment(transaction, assignmentID)

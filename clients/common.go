@@ -2,11 +2,7 @@
 package clients
 
 import (
-	"log/slog"
-
 	"github.com/getsentry/sentry-go"
-	"github.com/palantir/stacktrace"
-	"gorm.io/gorm"
 )
 
 type HakaseClient interface {
@@ -23,20 +19,12 @@ type HakaseClient interface {
 	DeleteAssignment(span *sentry.Span, assignmentID string) error
 }
 
-type DatabaseClient struct {
-	HakaseClient
-	DB *gorm.DB
+type OntologyClient = ClientWithResponses
+
+type OntologyEdit struct {
+	Type       string `json:"type"`
+	PrimaryKey string `json:"primaryKey"`
+	ObjectType string `json:"objectType"`
 }
 
 type DiscordSession struct{}
-
-func MigrateDatabase(db *gorm.DB) {
-	err := db.AutoMigrate(&Course{})
-	if err != nil {
-		slog.Error(stacktrace.Propagate(err, "error migrating course model").Error())
-	}
-	err = db.AutoMigrate(&Assignment{})
-	if err != nil {
-		slog.Error(stacktrace.Propagate(err, "error migrating assignment model").Error())
-	}
-}

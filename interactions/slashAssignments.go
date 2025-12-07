@@ -21,7 +21,7 @@ var AssignmentsCommand = discordgo.ApplicationCommand{
 		{
 			Name:        "id",
 			Description: "retrieves assignment with this id",
-			Type:        discordgo.ApplicationCommandOptionInteger,
+			Type:        discordgo.ApplicationCommandOptionString,
 		},
 	},
 }

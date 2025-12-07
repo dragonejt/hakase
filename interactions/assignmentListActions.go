@@ -73,25 +73,14 @@ func AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.In
 		return
 	}
 
-	course, err := hakaseClient.ReadCourse(transaction, interactionCreate.GuildID)
-	if err != nil {
-		_, err := bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
-			Content: fmt.Sprintf("error reading course: %s", err.Error()),
-		})
-		if err != nil {
-			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
-		}
-		return
-	}
-
 	assignment := clients.Assignment{
-		Name:   assignmentData.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value,
-		Due:    due,
-		Course: course,
+		Name:     assignmentData.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value,
+		Due:      due,
+		CourseID: interactionCreate.GuildID,
 	}
 
 	if assignmentData.Components[2].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value != "" {
-		assignment.Link = assignmentData.Components[2].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value
+		assignment.URL = assignmentData.Components[2].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value
 	}
 
 	if assignment.Due.Before(time.Now()) {
