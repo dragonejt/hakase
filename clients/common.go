@@ -24,7 +24,7 @@ type HakaseClient interface {
 type BackendClient struct {
 	HakaseClient
 
-	Url        string
+	URL        string
 	AuthToken  string
 	HTTPClient *http.Client
 }
