@@ -2,8 +2,11 @@
 package clients
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -11,184 +14,251 @@ import (
 )
 
 type Assignment struct {
-	ID       string
-	CourseID string
-	Name     string
-	Due      time.Time
-	URL      string
+	Assignment string     `json:"Assignment,omitempty"`
+	ID         string     `json:"id,omitempty"`
+	CourseID   string     `json:"courseId,omitempty"`
+	Name       string     `json:"name,omitempty"`
+	Due        *time.Time `json:"due,omitempty"`
+	URL        string     `json:"url,omitempty"`
+}
+
+type AssignmentRequest struct {
+	Parameters Assignment     `json:"parameters"`
+	Options    RequestOptions `json:"options"`
+}
+
+type ListAssignmentsResponse struct {
+	Data []Assignment `json:"data,omitempty"`
 }
 
 // ReadAssignment retrieves an assignment by its ID from the backend.
-func (client *OntologyClient) ReadAssignment(span *sentry.Span, assignmentID string) (Assignment, error) {
+func (backend *BackendClient) ReadAssignment(span *sentry.Span, assignmentID string) (Assignment, error) {
 	span = span.StartChild("readAssignment")
 	defer span.Finish()
 
-	response, err := client.AssignmentGetAssignmentWithResponse(span.Context(), assignmentID, new(AssignmentGetAssignmentParams))
-	if err != nil || response.JSON200 == nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to read assignment with assignment ID: %s", assignmentID)
+	assignment := Assignment{}
+
+	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/objects/Assignment/%s", backend.Url, assignmentID), nil)
+	if err != nil {
+		return assignment, stacktrace.Propagate(err, "failed to create API request")
+	}
+	request.Header.Add("accept", "application/json")
+	request.Header.Add("authorization", fmt.Sprintf("Bearer %s", backend.AuthToken))
+	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
+	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
+
+	response, err := backend.HTTPClient.Do(request)
+	if err != nil {
+		return assignment, stacktrace.Propagate(err, "failed to execute API request")
+	}
+	if response.StatusCode != http.StatusOK {
+		return assignment, stacktrace.NewError("failed status code API response: %d", response.StatusCode)
 	}
 
-	return Assignment{
-		ID:       *response.JSON200.Id,
-		CourseID: *response.JSON200.CourseId,
-		Name:     *response.JSON200.Name,
-		Due:      *response.JSON200.Due,
-		URL:      *response.JSON200.Url,
-	}, nil
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return assignment, stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
+	}
+
+	err = json.Unmarshal(body, &assignment)
+	if err != nil {
+		return assignment, stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
+	}
+
+	return assignment, nil
 }
 
 // ListAssignments lists all assignments for a course.
-func (client *OntologyClient) ListAssignments(span *sentry.Span, guildID string) ([]Assignment, error) {
+func (backend *BackendClient) ListAssignments(span *sentry.Span, guildID string) ([]Assignment, error) {
 	span = span.StartChild("listAssignments")
 	defer span.Finish()
 
-	assignments := []Assignment{}
-	response, err := client.CourseListCourseLinkedAssignmentsWithResponse(span.Context(), guildID, new(CourseListCourseLinkedAssignmentsParams))
-	if err != nil || response.JSON200 == nil {
-		return assignments, stacktrace.Propagate(err, "failed to list assignments with course ID: %s", guildID)
+	listAssignmentsResponse := ListAssignmentsResponse{}
+
+	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/objects/Course/%s/links/assignments", backend.Url, guildID), nil)
+	if err != nil {
+		return listAssignmentsResponse.Data, stacktrace.Propagate(err, "failed to create API request")
+	}
+	request.Header.Add("accept", "application/json")
+	request.Header.Add("authorization", fmt.Sprintf("Bearer %s", backend.AuthToken))
+	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
+	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
+
+	response, err := backend.HTTPClient.Do(request)
+	if err != nil {
+		return listAssignmentsResponse.Data, stacktrace.Propagate(err, "failed to execute API request")
+	}
+	if response.StatusCode != http.StatusOK {
+		return listAssignmentsResponse.Data, stacktrace.NewError("failed status code API response: %d", response.StatusCode)
 	}
 
-	for _, assignment := range *response.JSON200.Data {
-		assignments = append(assignments, Assignment{
-			ID:       *assignment.Id,
-			CourseID: *assignment.CourseId,
-			Name:     *assignment.Name,
-			Due:      *assignment.Due,
-			URL:      *assignment.Url,
-		})
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return listAssignmentsResponse.Data, stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
 	}
 
-	return assignments, nil
+	err = json.Unmarshal(body, &listAssignmentsResponse)
+	if err != nil {
+		return listAssignmentsResponse.Data, stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
+	}
+
+	return listAssignmentsResponse.Data, nil
 }
 
 // CreateAssignment creates a new assignment in the backend.
-func (client *OntologyClient) CreateAssignment(span *sentry.Span, assignment Assignment) (Assignment, error) {
+func (backend *BackendClient) CreateAssignment(span *sentry.Span, assignment Assignment) (string, error) {
 	span = span.StartChild("createAssignment")
 	defer span.Finish()
 
-	mode := VALIDATEANDEXECUTE
-	returnEdits := ALL
-	createResponse, err := client.CreateAssignmentApplyCreateAssignmentWithResponse(span.Context(), new(CreateAssignmentApplyCreateAssignmentParams), CreateAssignmentApplyCreateAssignmentJSONRequestBody{
-		Parameters: OsdkCreateAssignmentParameters{
-			CourseId: assignment.CourseID,
-			Due:      assignment.Due,
-			Name:     assignment.Name,
-			Url:      assignment.URL,
+	assignmentRequest := AssignmentRequest{
+		Parameters: assignment,
+		Options: RequestOptions{
+			ReturnEdits: "ALL",
 		},
-		Options: OntologiesApplyActionRequestOptions{
-			Mode:        &mode,
-			ReturnEdits: &returnEdits,
-		},
-	})
-	if err != nil || createResponse.JSON200 == nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to create course")
 	}
-	if createResponse.JSON200.Validation.Result == INVALID {
-		return Assignment{}, stacktrace.NewError("failed validation: %s", fmt.Sprint(createResponse.JSON200.Validation.Parameters))
-	}
+	assignmentResponse := ActionResponse{}
 
-	edits := []OntologyEdit{}
-	objectEdits, err := createResponse.JSON200.Edits.AsOntologiesObjectEdits()
+	jsonBody, err := json.Marshal(assignmentRequest)
 	if err != nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to get ontologies object edits")
-	}
-	for _, objectEdit := range *objectEdits.Edits {
-		edit := OntologyEdit{}
-		err := json.Unmarshal(objectEdit.union, &edit)
-		if err != nil {
-			return Assignment{}, stacktrace.Propagate(err, "failed to unmarshal to OntologyEdit")
-		}
-		edits = append(edits, edit)
+		return "", stacktrace.Propagate(err, "failed to marshal assignment")
 	}
 
-	assignmentID := edits[0].PrimaryKey
-	readResponse, err := client.AssignmentGetAssignmentWithResponse(span.Context(), assignmentID, new(AssignmentGetAssignmentParams))
-	if err != nil || readResponse.JSON200 == nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to read assignment with assignment ID: %s", assignmentID)
+	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/create-assignment/apply", backend.Url), bytes.NewReader(jsonBody))
+	if err != nil {
+		return "", stacktrace.Propagate(err, "failed to create API request")
 	}
-	return Assignment{
-		ID:       *readResponse.JSON200.Id,
-		CourseID: *readResponse.JSON200.CourseId,
-		Name:     *readResponse.JSON200.Name,
-		Due:      *readResponse.JSON200.Due,
-		URL:      *readResponse.JSON200.Url,
-	}, nil
+	request.Header.Add("accept", "application/json")
+	request.Header.Add("content-type", "application/json")
+	request.Header.Add("authorization", fmt.Sprintf("Bearer %s", backend.AuthToken))
+	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
+	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
+
+	response, err := backend.HTTPClient.Do(request)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "failed to execute API request")
+	}
+	if response.StatusCode != http.StatusOK {
+		return "", stacktrace.NewError("failed status code API response: %d", response.StatusCode)
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
+	}
+
+	err = json.Unmarshal(body, &assignmentResponse)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
+	}
+	if assignmentResponse.Validation.Result != "VALID" {
+		return "", stacktrace.NewError("request validation result: %s", assignmentResponse.Validation.Result)
+	}
+
+	return assignmentResponse.Edits.Edits[0].PrimaryKey, nil
 }
 
 // UpdateAssignment updates an existing assignment in the backend.
-func (client *OntologyClient) UpdateAssignment(span *sentry.Span, assignment Assignment) (Assignment, error) {
+func (backend *BackendClient) UpdateAssignment(span *sentry.Span, assignment Assignment) error {
 	span = span.StartChild("updateAssignment")
 	defer span.Finish()
 
-	mode := VALIDATEANDEXECUTE
-	returnEdits := ALL
-	editResponse, err := client.EditAssignmentApplyEditAssignmentWithResponse(span.Context(), new(EditAssignmentApplyEditAssignmentParams), EditAssignmentApplyEditAssignmentJSONRequestBody{
-		Parameters: OsdkEditAssignmentParameters{
-			Due:  assignment.Due,
-			Name: assignment.Name,
-			Url:  assignment.URL,
+	assignment.ID = ""
+	assignmentRequest := AssignmentRequest{
+		Parameters: assignment,
+		Options: RequestOptions{
+			ReturnEdits: "ALL",
 		},
-		Options: OntologiesApplyActionRequestOptions{
-			Mode:        &mode,
-			ReturnEdits: &returnEdits,
-		},
-	})
-	if err != nil || editResponse.JSON200 == nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to update assignment with assignment ID: %s", assignment.ID)
 	}
-	if editResponse.JSON200.Validation.Result == INVALID {
-		return Assignment{}, stacktrace.NewError("failed validation: %s", fmt.Sprint(editResponse.JSON200.Validation.Parameters))
-	}
+	assignmentResponse := ActionResponse{}
 
-	edits := []OntologyEdit{}
-	objectEdits, err := editResponse.JSON200.Edits.AsOntologiesObjectEdits()
+	jsonBody, err := json.Marshal(assignmentRequest)
 	if err != nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to get ontologies object edits")
-	}
-	for _, objectEdit := range *objectEdits.Edits {
-		edit := OntologyEdit{}
-		err := json.Unmarshal(objectEdit.union, &edit)
-		if err != nil {
-			return Assignment{}, stacktrace.Propagate(err, "failed to unmarshal to OntologyEdit")
-		}
-		edits = append(edits, edit)
+		return stacktrace.Propagate(err, "failed to marshal assignment")
 	}
 
-	assignmentID := edits[0].PrimaryKey
-	readResponse, err := client.AssignmentGetAssignmentWithResponse(span.Context(), assignmentID, new(AssignmentGetAssignmentParams))
-	if err != nil || readResponse.JSON200 == nil {
-		return Assignment{}, stacktrace.Propagate(err, "failed to read assignment with assignment ID: %s", assignmentID)
+	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/edit-assignment/apply", backend.Url), bytes.NewReader(jsonBody))
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create API request")
 	}
-	return Assignment{
-		ID:       *readResponse.JSON200.Id,
-		CourseID: *readResponse.JSON200.CourseId,
-		Name:     *readResponse.JSON200.Name,
-		Due:      *readResponse.JSON200.Due,
-		URL:      *readResponse.JSON200.Url,
-	}, nil
+	request.Header.Add("accept", "application/json")
+	request.Header.Add("content-type", "application/json")
+	request.Header.Add("authorization", fmt.Sprintf("Bearer %s", backend.AuthToken))
+	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
+	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
+
+	response, err := backend.HTTPClient.Do(request)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to execute API request")
+	}
+	if response.StatusCode != http.StatusOK {
+		return stacktrace.NewError("failed status code API response: %d", response.StatusCode)
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
+	}
+
+	err = json.Unmarshal(body, &assignmentResponse)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
+	}
+	if assignmentResponse.Validation.Result != "VALID" {
+		return stacktrace.NewError("request validation result: %s", assignmentResponse.Validation.Result)
+	}
+
+	return nil
 }
 
 // DeleteAssignment deletes an assignment from the backend.
-func (client *OntologyClient) DeleteAssignment(span *sentry.Span, assignmentID string) error {
+func (backend *BackendClient) DeleteAssignment(span *sentry.Span, assignmentID string) error {
 	span = span.StartChild("deleteAssignment")
 	defer span.Finish()
 
-	mode := VALIDATEANDEXECUTE
-	returnEdits := ALL
-	response, err := client.DeleteAssignmentApplyDeleteAssignmentWithResponse(span.Context(), new(DeleteAssignmentApplyDeleteAssignmentParams), DeleteAssignmentApplyDeleteAssignmentJSONRequestBody{
-		Parameters: OsdkDeleteAssignmentParameters{
+	assignmentRequest := AssignmentRequest{
+		Parameters: Assignment{
 			Assignment: assignmentID,
 		},
-		Options: OntologiesApplyActionRequestOptions{
-			Mode:        &mode,
-			ReturnEdits: &returnEdits,
+		Options: RequestOptions{
+			ReturnEdits: "ALL",
 		},
-	})
-	if err != nil || response.JSON200 == nil {
-		return stacktrace.Propagate(err, "failed to delete assignment with assignment ID: %s", assignmentID)
 	}
-	if response.JSON200.Validation.Result == INVALID {
-		return stacktrace.NewError("failed validation: %s", fmt.Sprint(response.JSON200.Validation.Parameters))
+	assignmentResponse := ActionResponse{}
+
+	jsonBody, err := json.Marshal(assignmentRequest)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to marshal assignment")
+	}
+
+	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/delete-assignment/apply", backend.Url), bytes.NewReader(jsonBody))
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create API request")
+	}
+	request.Header.Add("accept", "application/json")
+	request.Header.Add("content-type", "application/json")
+	request.Header.Add("authorization", fmt.Sprintf("Bearer %s", backend.AuthToken))
+	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
+	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
+
+	response, err := backend.HTTPClient.Do(request)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to execute API request")
+	}
+	if response.StatusCode != http.StatusOK {
+		return stacktrace.NewError("failed status code API response: %d", response.StatusCode)
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
+	}
+
+	err = json.Unmarshal(body, &assignmentResponse)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
+	}
+	if assignmentResponse.Validation.Result != "VALID" {
+		return stacktrace.NewError("request validation result: %s", assignmentResponse.Validation.Result)
 	}
 
 	return nil

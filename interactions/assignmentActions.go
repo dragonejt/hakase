@@ -94,7 +94,7 @@ func UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo
 			}
 			return
 		}
-		assignment.Due = due
+		assignment.Due = &due
 	}
 
 	if assignmentData.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value != "" {
@@ -108,7 +108,7 @@ func UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo
 	currentAssignment, err := hakaseClient.ReadAssignment(transaction, assignmentID)
 	if assignment.Due.Equal(time.Time{}) {
 		assignment.Due = currentAssignment.Due
-	} else if err == nil && assignment.Due.Before(currentAssignment.Due) {
+	} else if err == nil && assignment.Due.Before(*currentAssignment.Due) {
 		_, err := bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
 			Content: "new due date before original assignment due date! hakase does not support this.",
 		})
@@ -118,10 +118,22 @@ func UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo
 		return
 	}
 
-	assignment.ID = currentAssignment.ID
-	updatedAssignment, err := hakaseClient.UpdateAssignment(transaction, assignment)
+	assignment.Assignment = currentAssignment.ID
+	err = hakaseClient.UpdateAssignment(transaction, assignment)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "error updating assignment").Error())
+		_, err := bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
+			Content: err.Error(),
+			Flags:   discordgo.MessageFlagsEphemeral,
+		})
+		if err != nil {
+			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
+		}
+		return
+	}
+	updatedAssignment, err := hakaseClient.ReadAssignment(transaction, assignmentID)
+	if err != nil {
+		slog.Error(stacktrace.Propagate(err, "error reading updated assignment").Error())
 		_, err := bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
 			Content: err.Error(),
 			Flags:   discordgo.MessageFlagsEphemeral,

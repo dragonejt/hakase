@@ -40,7 +40,7 @@ func SlashAssignments(bot *discordgo.Session, interactionCreate *discordgo.Inter
 
 	assignmentID, exists := optionMap["id"]
 	if exists {
-		getAssignment(transaction, interactionCreate, hakaseClient, fmt.Sprint(assignmentID.IntValue()))
+		getAssignment(transaction, interactionCreate, hakaseClient, assignmentID.StringValue())
 
 	} else {
 		listAssignments(transaction, interactionCreate, hakaseClient)

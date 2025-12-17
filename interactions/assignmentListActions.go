@@ -75,7 +75,7 @@ func AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.In
 
 	assignment := clients.Assignment{
 		Name:     assignmentData.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value,
-		Due:      due,
+		Due:      &due,
 		CourseID: interactionCreate.GuildID,
 	}
 
@@ -93,8 +93,20 @@ func AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.In
 		return
 	}
 
-	createdAssignment, err := hakaseClient.CreateAssignment(transaction, assignment)
+	createdAssignmentID, err := hakaseClient.CreateAssignment(transaction, assignment)
 	if err != nil {
+		_, err := bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
+			Content: err.Error(),
+			Flags:   discordgo.MessageFlagsEphemeral,
+		})
+		if err != nil {
+			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
+		}
+		return
+	}
+	createdAssignment, err := hakaseClient.ReadAssignment(transaction, createdAssignmentID)
+	if err != nil {
+		slog.Error(stacktrace.Propagate(err, "error getting created assignment with id: %s", createdAssignmentID).Error())
 		_, err := bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
 			Content: err.Error(),
 			Flags:   discordgo.MessageFlagsEphemeral,
