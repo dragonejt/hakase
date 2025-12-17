@@ -6,15 +6,12 @@ require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/bwmarrin/discordgo v0.29.0
 	github.com/getsentry/sentry-go v0.36.2
-	github.com/oapi-codegen/runtime v1.1.2
 	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177
 	github.com/stretchr/testify v1.11.1
 )
 
 require (
-	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
