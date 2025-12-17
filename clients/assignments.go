@@ -38,7 +38,7 @@ func (backend *BackendClient) ReadAssignment(span *sentry.Span, assignmentID str
 
 	assignment := Assignment{}
 
-	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/objects/Assignment/%s", backend.Url, assignmentID), nil)
+	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/objects/Assignment/%s", backend.URL, assignmentID), nil)
 	if err != nil {
 		return assignment, stacktrace.Propagate(err, "failed to create API request")
 	}
@@ -75,7 +75,7 @@ func (backend *BackendClient) ListAssignments(span *sentry.Span, guildID string)
 
 	listAssignmentsResponse := ListAssignmentsResponse{}
 
-	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/objects/Course/%s/links/assignments", backend.Url, guildID), nil)
+	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/objects/Course/%s/links/assignments", backend.URL, guildID), nil)
 	if err != nil {
 		return listAssignmentsResponse.Data, stacktrace.Propagate(err, "failed to create API request")
 	}
@@ -123,7 +123,7 @@ func (backend *BackendClient) CreateAssignment(span *sentry.Span, assignment Ass
 		return "", stacktrace.Propagate(err, "failed to marshal assignment")
 	}
 
-	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/create-assignment/apply", backend.Url), bytes.NewReader(jsonBody))
+	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/create-assignment/apply", backend.URL), bytes.NewReader(jsonBody))
 	if err != nil {
 		return "", stacktrace.Propagate(err, "failed to create API request")
 	}
@@ -176,7 +176,7 @@ func (backend *BackendClient) UpdateAssignment(span *sentry.Span, assignment Ass
 		return stacktrace.Propagate(err, "failed to marshal assignment")
 	}
 
-	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/edit-assignment/apply", backend.Url), bytes.NewReader(jsonBody))
+	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/edit-assignment/apply", backend.URL), bytes.NewReader(jsonBody))
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to create API request")
 	}
@@ -230,7 +230,7 @@ func (backend *BackendClient) DeleteAssignment(span *sentry.Span, assignmentID s
 		return stacktrace.Propagate(err, "failed to marshal assignment")
 	}
 
-	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/delete-assignment/apply", backend.Url), bytes.NewReader(jsonBody))
+	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/delete-assignment/apply", backend.URL), bytes.NewReader(jsonBody))
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to create API request")
 	}

@@ -54,7 +54,7 @@ func main() {
 	}
 
 	hakaseClient := &clients.BackendClient{
-		Url:        settings.BACKEND_URL,
+		URL:        settings.BACKEND_URL,
 		AuthToken:  settings.BACKEND_AUTH_TOKEN,
 		HTTPClient: bot.Client,
 	}
