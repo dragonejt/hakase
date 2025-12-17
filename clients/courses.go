@@ -2,112 +2,219 @@
 package clients
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/palantir/stacktrace"
 )
 
 type Course struct {
-	CourseID      string
-	NotifyChannel string
-	NotifyGroup   string
+	Course        string `json:"Course,omitempty"`
+	CourseID      string `json:"courseId,omitempty"`
+	NotifyChannel string `json:"notifyChannel,omitempty"`
+	NotifyGroup   string `json:"notifyGroup,omitempty"`
+}
+
+type CourseRequest struct {
+	Parameters Course         `json:"parameters"`
+	Options    RequestOptions `json:"options"`
 }
 
 // ReadCourse retrieves a course by its ID from the backend.
-func (client *OntologyClient) ReadCourse(span *sentry.Span, guildID string) (Course, error) {
+func (backend *BackendClient) ReadCourse(span *sentry.Span, guildID string) (Course, error) {
 	span = span.StartChild("readCourse")
 	defer span.Finish()
 
-	response, err := client.CourseGetCourseWithResponse(span.Context(), guildID, new(CourseGetCourseParams))
-	if err != nil || response.JSON200 == nil {
-		return Course{}, stacktrace.Propagate(err, "failed to read course with course ID: %s", guildID)
+	course := Course{}
+
+	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/objects/Course/%s", backend.Url, guildID), nil)
+	if err != nil {
+		return course, stacktrace.Propagate(err, "failed to create API request")
+	}
+	request.Header.Add("accept", "application/json")
+	request.Header.Add("authorization", fmt.Sprintf("Bearer %s", backend.AuthToken))
+	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
+	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
+
+	response, err := backend.HTTPClient.Do(request)
+	if err != nil {
+		return course, stacktrace.Propagate(err, "failed to execute API request")
+	}
+	if response.StatusCode != http.StatusOK {
+		return course, stacktrace.NewError("failed status code API response: %d", response.StatusCode)
 	}
 
-	return Course{
-		CourseID:      *response.JSON200.CourseId,
-		NotifyChannel: *response.JSON200.NotifyChannel,
-		NotifyGroup:   *response.JSON200.NotifyGroup,
-	}, nil
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return course, stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
+	}
+
+	err = json.Unmarshal(body, &course)
+	if err != nil {
+		return course, stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
+	}
+
+	return course, nil
 }
 
 // CreateCourse creates a new course in the backend.
-func (client *OntologyClient) CreateCourse(span *sentry.Span, course Course) error {
+func (backend *BackendClient) CreateCourse(span *sentry.Span, course Course) error {
 	span = span.StartChild("createCourse")
 	defer span.Finish()
 
-	mode := VALIDATEANDEXECUTE
-	returnEdits := ALL
-	response, err := client.CreateCourseApplyCreateCourseWithResponse(span.Context(), new(CreateCourseApplyCreateCourseParams), CreateCourseApplyCreateCourseJSONRequestBody{
-		Parameters: OsdkCreateCourseParameters{
-			CourseID:      course.CourseID,
-			NotifyChannel: &course.NotifyChannel,
-			NotifyGroup:   &course.NotifyGroup,
+	courseRequest := CourseRequest{
+		Parameters: course,
+		Options: RequestOptions{
+			ReturnEdits: "ALL",
 		},
-		Options: OntologiesApplyActionRequestOptions{
-			Mode:        &mode,
-			ReturnEdits: &returnEdits,
-		},
-	})
-	if err != nil || response.JSON200 == nil {
-		return stacktrace.Propagate(err, "failed to create course")
 	}
-	if response.JSON200.Validation.Result == INVALID {
-		return stacktrace.NewError("failed validation: %s", fmt.Sprint(response.JSON200.Validation.Parameters))
+	courseResponse := ActionResponse{}
+
+	jsonBody, err := json.Marshal(courseRequest)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to marshal course")
+	}
+
+	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/create-course/apply", backend.Url), bytes.NewReader(jsonBody))
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create API request")
+	}
+	request.Header.Add("accept", "application/json")
+	request.Header.Add("content-type", "application/json")
+	request.Header.Add("authorization", fmt.Sprintf("Bearer %s", backend.AuthToken))
+	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
+	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
+
+	response, err := backend.HTTPClient.Do(request)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to execute API request")
+	}
+	if response.StatusCode != http.StatusOK {
+		return stacktrace.NewError("failed status code API response: %d", response.StatusCode)
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
+	}
+
+	err = json.Unmarshal(body, &courseResponse)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
+	}
+	if courseResponse.Validation.Result != "VALID" {
+		return stacktrace.NewError("request validation result: %s", courseResponse.Validation.Result)
 	}
 
 	return nil
 }
 
 // UpdateCourse updates an existing course in the backend.
-func (client *OntologyClient) UpdateCourse(span *sentry.Span, course Course) error {
+func (backend *BackendClient) UpdateCourse(span *sentry.Span, course Course) error {
 	span = span.StartChild("updateCourse")
 	defer span.Finish()
 
-	mode := VALIDATEANDEXECUTE
-	returnEdits := ALL
-	response, err := client.EditCourseApplyEditCourseWithResponse(span.Context(), new(EditCourseApplyEditCourseParams), EditCourseApplyEditCourseJSONRequestBody{
-		Parameters: OsdkEditCourseParameters{
-			Course:        course.CourseID,
-			NotifyChannel: course.NotifyChannel,
-			NotifyGroup:   course.NotifyGroup,
+	course.CourseID = ""
+	courseRequest := CourseRequest{
+		Parameters: course,
+		Options: RequestOptions{
+			ReturnEdits: "ALL",
 		},
-		Options: OntologiesApplyActionRequestOptions{
-			Mode:        &mode,
-			ReturnEdits: &returnEdits,
-		},
-	})
-	if err != nil || response.JSON200 == nil {
-		return stacktrace.Propagate(err, "failed to update course")
 	}
-	if response.JSON200.Validation.Result == INVALID {
-		return stacktrace.NewError("failed validation: %s", fmt.Sprint(response.JSON200.Validation.Parameters))
+	courseResponse := ActionResponse{}
+
+	jsonBody, err := json.Marshal(courseRequest)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to marshal course")
+	}
+
+	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/edit-course/apply", backend.Url), bytes.NewReader(jsonBody))
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create API request")
+	}
+	request.Header.Add("accept", "application/json")
+	request.Header.Add("content-type", "application/json")
+	request.Header.Add("authorization", fmt.Sprintf("Bearer %s", backend.AuthToken))
+	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
+	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
+
+	response, err := backend.HTTPClient.Do(request)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to execute API request")
+	}
+	if response.StatusCode != http.StatusOK {
+		return stacktrace.NewError("failed status code API response: %d", response.StatusCode)
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
+	}
+
+	err = json.Unmarshal(body, &courseResponse)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
+	}
+	if courseResponse.Validation.Result != "VALID" {
+		return stacktrace.NewError("request validation result: %s", courseResponse.Validation.Result)
 	}
 
 	return nil
 }
 
 // DeleteCourse deletes a course from the backend.
-func (client *OntologyClient) DeleteCourse(span *sentry.Span, guildID string) error {
+func (backend *BackendClient) DeleteCourse(span *sentry.Span, guildID string) error {
 	span = span.StartChild("deleteCourse")
 	defer span.Finish()
 
-	mode := VALIDATEANDEXECUTE
-	returnEdits := ALL
-	response, err := client.DeleteCourseApplyDeleteCourseWithResponse(span.Context(), new(DeleteCourseApplyDeleteCourseParams), DeleteCourseApplyDeleteCourseJSONRequestBody{
-		Parameters: OsdkDeleteCourseParameters{
+	courseRequest := CourseRequest{
+		Parameters: Course{
 			Course: guildID,
 		},
-		Options: OntologiesApplyActionRequestOptions{
-			Mode:        &mode,
-			ReturnEdits: &returnEdits,
+		Options: RequestOptions{
+			ReturnEdits: "ALL",
 		},
-	})
-	if err != nil || response.JSON200 == nil {
-		return stacktrace.Propagate(err, "failed to delete course with course ID: %s", guildID)
 	}
-	if response.JSON200.Validation.Result == INVALID {
-		return stacktrace.NewError("failed validation: %s", fmt.Sprint(response.JSON200.Validation.Parameters))
+	courseResponse := ActionResponse{}
+
+	jsonBody, err := json.Marshal(courseRequest)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to marshal course")
+	}
+
+	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/delete-course/apply", backend.Url), bytes.NewReader(jsonBody))
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create API request")
+	}
+	request.Header.Add("accept", "application/json")
+	request.Header.Add("content-type", "application/json")
+	request.Header.Add("authorization", fmt.Sprintf("Token %s", backend.AuthToken))
+	request.Header.Add(sentry.SentryTraceHeader, sentry.CurrentHub().GetTraceparent())
+	request.Header.Add(sentry.SentryBaggageHeader, sentry.CurrentHub().GetBaggage())
+
+	response, err := backend.HTTPClient.Do(request)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to execute API request")
+	}
+	if response.StatusCode != http.StatusOK {
+		return stacktrace.NewError("failed status code API response: %d", response.StatusCode)
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
+	}
+
+	err = json.Unmarshal(body, &courseResponse)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to unmarshal API response: %s", string(body))
+	}
+	if courseResponse.Validation.Result != "VALID" {
+		return stacktrace.NewError("request validation result: %s", courseResponse.Validation.Result)
 	}
 
 	return nil

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"net/http"
 	"os"
 
 	"github.com/bwmarrin/discordgo"
@@ -48,19 +47,16 @@ func main() {
 	}
 	bot.StateEnabled = true
 
-	hakaseClient, err := clients.NewClientWithResponses(settings.FOUNDRY_URL, clients.WithHTTPClient(bot.Client), clients.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", settings.FOUNDRY_TOKEN))
-		return nil
-	}))
-	if err != nil {
-		slog.Error(stacktrace.Propagate(err, "failed to create ontology client").Error())
-		return
-	}
-
 	err = bot.Open()
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to open discord session").Error())
 		return
+	}
+
+	hakaseClient := &clients.BackendClient{
+		Url:        settings.BACKEND_URL,
+		AuthToken:  settings.BACKEND_AUTH_TOKEN,
+		HTTPClient: bot.Client,
 	}
 
 	slog.Info("registering event handlers")

@@ -47,6 +47,7 @@ func UpdateNotifyChannel(bot *discordgo.Session, interactionCreate *discordgo.In
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
 	}
+	course.Course = interactionCreate.GuildID
 	course.NotifyChannel = notifyChannel
 	err = hakaseClient.UpdateCourse(transaction, course)
 	if err != nil {
@@ -124,6 +125,7 @@ func UpdateNotifyRole(bot *discordgo.Session, interactionCreate *discordgo.Inter
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
 	}
+	course.Course = interactionCreate.GuildID
 	course.NotifyGroup = notifyRole
 	err = hakaseClient.UpdateCourse(transaction, course)
 	if err != nil {
