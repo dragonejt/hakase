@@ -9,6 +9,16 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+type InteractionsTestSuite struct {
+	suite.Suite
+	mockInteraction *MockInteraction
+	eventHandler    *EventHandler
+}
+
+func TestInteractions(t *testing.T) {
+	suite.Run(t, new(InteractionsTestSuite))
+}
+
 type MockInteraction struct {
 	interactions.Interaction
 	mock.Mock
@@ -48,12 +58,6 @@ func (m *MockInteraction) SlashAssignments(bot *discordgo.Session, interactionCr
 
 func (m *MockInteraction) SlashHakase(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	m.Called(bot, interactionCreate)
-}
-
-type InteractionsTestSuite struct {
-	suite.Suite
-	mockInteraction *MockInteraction
-	eventHandler    *EventHandler
 }
 
 func (suite *InteractionsTestSuite) SetupTest() {
@@ -223,8 +227,4 @@ func (suite *InteractionsTestSuite) TestInteractionCreate_ModalSubmit_UpdateAssi
 	suite.eventHandler.InteractionCreate(bot, interactionCreate)
 
 	suite.mockInteraction.AssertExpectations(suite.T())
-}
-
-func TestInteractions(t *testing.T) {
-	suite.Run(t, new(InteractionsTestSuite))
 }
