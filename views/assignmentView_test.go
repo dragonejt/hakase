@@ -1,4 +1,4 @@
-package views
+package views_test
 
 import (
 	"testing"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/dragonejt/hakase-discord/clients"
+	"github.com/dragonejt/hakase-discord/views"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -15,8 +16,8 @@ type AssignmentViewTestSuite struct {
 	mockMember *discordgo.Member
 }
 
-func TestAssignmentView(t *testing.T) {
-	suite.Run(t, new(AssignmentViewTestSuite))
+func TestAssignmentView(testSuite *testing.T) {
+	suite.Run(testSuite, new(AssignmentViewTestSuite))
 }
 
 func (s *AssignmentViewTestSuite) SetupTest() {
@@ -34,12 +35,12 @@ func (s *AssignmentViewTestSuite) TestAssignmentView() {
 	testAssignment := clients.Assignment{
 		ID:       "test-id-1",
 		Name:     "Test Assignment",
-		Due:      testTime,
+		Due:      &testTime,
 		URL:      "https://example.com/assignment",
 		CourseID: "test-course",
 	}
 
-	embed := AssignmentView(s.mockMember, testAssignment)
+	embed := views.AssignmentView(s.mockMember, testAssignment)
 
 	s.NotNil(embed)
 	s.Equal("Test Assignment", embed.Title)
@@ -56,7 +57,7 @@ func (s *AssignmentViewTestSuite) TestAssignmentActions() {
 		Name: "Test Assignment",
 	}
 
-	actions := AssignmentActions(testAssignment)
+	actions := views.AssignmentActions(testAssignment)
 
 	s.NotNil(actions)
 	s.Len(actions.Components, 2)
@@ -78,7 +79,7 @@ func (s *AssignmentViewTestSuite) TestAssignmentActions() {
 
 // Test AssignmentModal for new assignment
 func (s *AssignmentViewTestSuite) TestAssignmentModalNew() {
-	components := AssignmentModal(nil)
+	components := views.AssignmentModal(nil)
 
 	s.Len(components, 3) // Should have 3 action rows
 
@@ -119,11 +120,11 @@ func (s *AssignmentViewTestSuite) TestAssignmentModalExisting() {
 	testAssignment := &clients.Assignment{
 		ID:   "test-id-1",
 		Name: "Existing Assignment",
-		Due:  testTime,
+		Due:  &testTime,
 		URL:  "https://example.com/existing",
 	}
 
-	components := AssignmentModal(testAssignment)
+	components := views.AssignmentModal(testAssignment)
 
 	s.Len(components, 3)
 

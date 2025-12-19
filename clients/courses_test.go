@@ -1,148 +1,228 @@
-package clients
+package clients_test
 
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	"github.com/dragonejt/hakase-discord/clients"
 	"github.com/getsentry/sentry-go"
 	"github.com/stretchr/testify/suite"
 )
 
-// MockOntologyClient extends MockHakaseClient for course-specific testing
-type MockOntologyClient struct {
-	*MockHakaseClient
-}
-
-func (m *MockOntologyClient) ReadCourse(span *sentry.Span, guildID string) (Course, error) {
-	args := m.Called(span, guildID)
-	return args.Get(0).(Course), args.Error(1)
-}
-
-func (m *MockOntologyClient) CreateCourse(span *sentry.Span, course Course) error {
-	args := m.Called(span, course)
-	return args.Error(0)
-}
-
-func (m *MockOntologyClient) UpdateCourse(span *sentry.Span, course Course) error {
-	args := m.Called(span, course)
-	return args.Error(0)
-}
-
-func (m *MockOntologyClient) DeleteCourse(span *sentry.Span, guildID string) error {
-	args := m.Called(span, guildID)
-	return args.Error(0)
-}
-
-// CoursesTestSuite tests course management functionality
-type CoursesTestSuite struct {
+// CourseTestSuite tests the actual BackendClient implementation for courses
+type CourseTestSuite struct {
 	suite.Suite
-	mockClient *MockOntologyClient
-	testSpan   *sentry.Span
+	testServer    *httptest.Server
+	backendClient *clients.BackendClient
+	testSpan      *sentry.Span
 }
 
 func TestCourses(t *testing.T) {
-	suite.Run(t, new(CoursesTestSuite))
+	suite.Run(t, new(CourseTestSuite))
 }
 
-func (s *CoursesTestSuite) SetupTest() {
-	s.mockClient = &MockOntologyClient{MockHakaseClient: new(MockHakaseClient)}
-	s.testSpan = sentry.StartSpan(context.Background(), s.T().Name())
+func (testSuite *CourseTestSuite) SetupTest() {
+	// Create a test HTTP server that we can control
+	testSuite.testServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// This will be overridden in individual tests
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{}`))
+	}))
+
+	testSuite.backendClient = &clients.BackendClient{
+		URL:        testSuite.testServer.URL,
+		AuthToken:  "test-token",
+		HTTPClient: testSuite.testServer.Client(),
+	}
+	testSuite.testSpan = sentry.StartSpan(context.Background(), testSuite.T().Name())
 }
 
-func (s *CoursesTestSuite) TearDownTest() {
-	s.testSpan.Finish()
-	s.mockClient.AssertExpectations(s.T())
+func (testSuite *CourseTestSuite) TearDownTest() {
+	testSuite.testSpan.Finish()
+	testSuite.testServer.Close()
 }
 
-// Test ReadCourse functionality
-func (s *CoursesTestSuite) TestReadCourseSuccess() {
-	testCourse := Course{
-		CourseID:      "test-course-123",
-		NotifyChannel: "channel-123",
-		NotifyGroup:   "group-123",
+// Test ReadCourse with successful API response
+func (testSuite *CourseTestSuite) TestReadCourseSuccess() {
+	testCourse := clients.Course{
+		Course:        "course-1",
+		CourseID:      "course-1",
+		NotifyChannel: "channel-1",
+		NotifyGroup:   "group-1",
 	}
 
-	s.mockClient.On("ReadCourse", s.testSpan, "test-course-123").Return(testCourse, nil)
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify the request
+		testSuite.Equal(http.MethodGet, r.Method)
+		testSuite.Equal("/objects/Course/course-1", r.URL.Path)
+		testSuite.Equal("Bearer test-token", r.Header.Get("authorization"))
 
-	result, err := s.mockClient.ReadCourse(s.testSpan, "test-course-123")
-	s.NoError(err)
-	s.Equal(testCourse, result)
+		// Return mock response
+		w.WriteHeader(http.StatusOK)
+		responseJSON := fmt.Sprintf(`{
+			"Course": "%s",
+			"courseId": "%s",
+			"notifyChannel": "%s",
+			"notifyGroup": "%s"
+		}`, testCourse.Course, testCourse.CourseID, testCourse.NotifyChannel, testCourse.NotifyGroup)
+		w.Write([]byte(responseJSON))
+	})
+
+	result, err := testSuite.backendClient.ReadCourse(testSuite.testSpan, "course-1")
+	testSuite.NoError(err)
+	testSuite.Equal(testCourse.Course, result.Course)
+	testSuite.Equal(testCourse.CourseID, result.CourseID)
+	testSuite.Equal(testCourse.NotifyChannel, result.NotifyChannel)
+	testSuite.Equal(testCourse.NotifyGroup, result.NotifyGroup)
 }
 
-func (s *CoursesTestSuite) TestReadCourseError() {
-	s.mockClient.On("ReadCourse", s.testSpan, "invalid-course").Return(Course{}, fmt.Errorf("course not found"))
+// Test ReadCourse with error response
+func (testSuite *CourseTestSuite) TestReadCourseError() {
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"error": "not found"}`))
+	})
 
-	result, err := s.mockClient.ReadCourse(s.testSpan, "invalid-course")
-	s.Error(err)
-	s.Equal(Course{}, result)
+	result, err := testSuite.backendClient.ReadCourse(testSuite.testSpan, "invalid-course")
+	testSuite.Error(err)
+	testSuite.Equal("", result.CourseID)
 }
 
-// Test CreateCourse functionality
-func (s *CoursesTestSuite) TestCreateCourseSuccess() {
-	testCourse := Course{
-		CourseID:      "new-course-456",
-		NotifyChannel: "channel-456",
-		NotifyGroup:   "group-456",
+// Test CreateCourse with successful API response
+func (testSuite *CourseTestSuite) TestCreateCourseSuccess() {
+	testCourse := clients.Course{
+		Course:        "New Course",
+		CourseID:      "course-1",
+		NotifyChannel: "channel-1",
+		NotifyGroup:   "group-1",
 	}
 
-	s.mockClient.On("CreateCourse", s.testSpan, testCourse).Return(nil)
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify the request
+		testSuite.Equal(http.MethodPost, r.Method)
+		testSuite.Equal("/actions/create-course/apply", r.URL.Path)
+		testSuite.Equal("Bearer test-token", r.Header.Get("authorization"))
 
-	err := s.mockClient.CreateCourse(s.testSpan, testCourse)
-	s.NoError(err)
+		// Return mock response
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{
+			"validation": {
+				"result": "VALID"
+			}
+		}`))
+	})
+
+	err := testSuite.backendClient.CreateCourse(testSuite.testSpan, testCourse)
+	testSuite.NoError(err)
 }
 
-func (s *CoursesTestSuite) TestCreateCourseError() {
-	testCourse := Course{
+// Test CreateCourse with error response
+func (testSuite *CourseTestSuite) TestCreateCourseError() {
+	testCourse := clients.Course{
+		Course:        "Invalid Course",
 		CourseID:      "invalid-course",
-		NotifyChannel: "invalid-channel",
-		NotifyGroup:   "invalid-group",
+		NotifyChannel: "channel-1",
+		NotifyGroup:   "group-1",
 	}
 
-	s.mockClient.On("CreateCourse", s.testSpan, testCourse).Return(fmt.Errorf("validation failed"))
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{
+			"validation": {
+				"result": "INVALID"
+			}
+		}`))
+	})
 
-	err := s.mockClient.CreateCourse(s.testSpan, testCourse)
-	s.Error(err)
+	err := testSuite.backendClient.CreateCourse(testSuite.testSpan, testCourse)
+	testSuite.Error(err)
 }
 
-// Test UpdateCourse functionality
-func (s *CoursesTestSuite) TestUpdateCourseSuccess() {
-	testCourse := Course{
-		CourseID:      "existing-course-789",
-		NotifyChannel: "updated-channel",
-		NotifyGroup:   "updated-group",
+// Test UpdateCourse with successful API response
+func (testSuite *CourseTestSuite) TestUpdateCourseSuccess() {
+	testCourse := clients.Course{
+		Course:        "Updated Course",
+		CourseID:      "existing-course-id",
+		NotifyChannel: "channel-1",
+		NotifyGroup:   "group-1",
 	}
 
-	s.mockClient.On("UpdateCourse", s.testSpan, testCourse).Return(nil)
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify the request
+		testSuite.Equal(http.MethodPost, r.Method)
+		testSuite.Equal("/actions/edit-course/apply", r.URL.Path)
+		testSuite.Equal("Bearer test-token", r.Header.Get("authorization"))
 
-	err := s.mockClient.UpdateCourse(s.testSpan, testCourse)
-	s.NoError(err)
+		// Return mock response
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{
+			"validation": {
+				"result": "VALID"
+			}
+		}`))
+	})
+
+	err := testSuite.backendClient.UpdateCourse(testSuite.testSpan, testCourse)
+	testSuite.NoError(err)
 }
 
-func (s *CoursesTestSuite) TestUpdateCourseError() {
-	testCourse := Course{
-		CourseID:      "nonexistent-course",
-		NotifyChannel: "channel",
-		NotifyGroup:   "group",
+// Test UpdateCourse with error response
+func (testSuite *CourseTestSuite) TestUpdateCourseError() {
+	testCourse := clients.Course{
+		Course:        "Invalid Update",
+		CourseID:      "invalid-course-id",
+		NotifyChannel: "channel-1",
+		NotifyGroup:   "group-1",
 	}
 
-	s.mockClient.On("UpdateCourse", s.testSpan, testCourse).Return(fmt.Errorf("course not found"))
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"error": "not found"}`))
+	})
 
-	err := s.mockClient.UpdateCourse(s.testSpan, testCourse)
-	s.Error(err)
+	err := testSuite.backendClient.UpdateCourse(testSuite.testSpan, testCourse)
+	testSuite.Error(err)
 }
 
-// Test DeleteCourse functionality
-func (s *CoursesTestSuite) TestDeleteCourseSuccess() {
-	s.mockClient.On("DeleteCourse", s.testSpan, "course-to-delete").Return(nil)
+// Test DeleteCourse with successful API response
+func (testSuite *CourseTestSuite) TestDeleteCourseSuccess() {
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify the request
+		testSuite.Equal(http.MethodPost, r.Method)
+		testSuite.Equal("/actions/delete-course/apply", r.URL.Path)
+		testSuite.Equal("Token test-token", r.Header.Get("authorization"))
 
-	err := s.mockClient.DeleteCourse(s.testSpan, "course-to-delete")
-	s.NoError(err)
+		// Return mock response
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{
+			"validation": {
+				"result": "VALID"
+			}
+		}`))
+	})
+
+	err := testSuite.backendClient.DeleteCourse(testSuite.testSpan, "course-1")
+	testSuite.NoError(err)
 }
 
-func (s *CoursesTestSuite) TestDeleteCourseError() {
-	s.mockClient.On("DeleteCourse", s.testSpan, "nonexistent-course").Return(fmt.Errorf("course not found"))
+// Test DeleteCourse with error response
+func (testSuite *CourseTestSuite) TestDeleteCourseError() {
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"error": "not found"}`))
+	})
 
-	err := s.mockClient.DeleteCourse(s.testSpan, "nonexistent-course")
-	s.Error(err)
+	err := testSuite.backendClient.DeleteCourse(testSuite.testSpan, "invalid-course")
+	testSuite.Error(err)
 }

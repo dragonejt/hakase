@@ -13,7 +13,7 @@ import (
 )
 
 // GuildCreate handles the event when the bot is added to a guild and creates a course.
-func GuildCreate(bot *discordgo.Session, guildCreate *discordgo.GuildCreate, hakaseClient clients.HakaseClient) {
+func (handler *EventHandler) GuildCreate(bot *discordgo.Session, guildCreate *discordgo.GuildCreate) {
 	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "guildCreate")
 	defer transaction.Finish()
 	slog.Info(fmt.Sprintf("added to guild: %s (%s)", guildCreate.Name, guildCreate.ID))
@@ -21,7 +21,7 @@ func GuildCreate(bot *discordgo.Session, guildCreate *discordgo.GuildCreate, hak
 	course := clients.Course{
 		CourseID: guildCreate.ID,
 	}
-	err := hakaseClient.CreateCourse(transaction, course)
+	err := handler.HakaseClient.CreateCourse(transaction, course)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to create course").Error())
 	}
@@ -33,12 +33,12 @@ func GuildCreate(bot *discordgo.Session, guildCreate *discordgo.GuildCreate, hak
 }
 
 // GuildDelete handles the event when the bot is removed from a guild and deletes the course.
-func GuildDelete(bot *discordgo.Session, guildDelete *discordgo.GuildDelete, hakaseClient clients.HakaseClient) {
+func (handler *EventHandler) GuildDelete(bot *discordgo.Session, guildDelete *discordgo.GuildDelete) {
 	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "guildDelete")
 	defer transaction.Finish()
 	slog.Info(fmt.Sprintf("removed from guild: %s (%s)", guildDelete.Name, guildDelete.ID))
 
-	err := hakaseClient.DeleteCourse(transaction, guildDelete.ID)
+	err := handler.HakaseClient.DeleteCourse(transaction, guildDelete.ID)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to delete course").Error())
 	}

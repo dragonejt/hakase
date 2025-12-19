@@ -1,184 +1,319 @@
-package clients
+package clients_test
 
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/dragonejt/hakase-discord/clients"
 	"github.com/getsentry/sentry-go"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
-type MockHakaseClient struct {
-	HakaseClient
-	mock.Mock
-}
-
-func (m *MockHakaseClient) ReadAssignment(span *sentry.Span, assignmentID string) (Assignment, error) {
-	args := m.Called(span, assignmentID)
-	return args.Get(0).(Assignment), args.Error(1)
-}
-
-func (m *MockHakaseClient) ListAssignments(span *sentry.Span, courseID string) ([]Assignment, error) {
-	args := m.Called(span, courseID)
-	return args.Get(0).([]Assignment), args.Error(1)
-}
-
-func (m *MockHakaseClient) CreateAssignment(span *sentry.Span, assignment Assignment) (Assignment, error) {
-	args := m.Called(span, assignment)
-	return args.Get(0).(Assignment), args.Error(1)
-}
-
-func (m *MockHakaseClient) UpdateAssignment(span *sentry.Span, assignment Assignment) (Assignment, error) {
-	args := m.Called(span, assignment)
-	return args.Get(0).(Assignment), args.Error(1)
-}
-
-func (m *MockHakaseClient) DeleteAssignment(span *sentry.Span, assignmentID string) error {
-	args := m.Called(span, assignmentID)
-	return args.Error(0)
-}
-
-type AssignmentsTestSuite struct {
+// AssignmentTestSuite tests the actual BackendClient implementation for assignments
+type AssignmentTestSuite struct {
 	suite.Suite
-	mockClient *MockHakaseClient
-	testSpan   *sentry.Span
+	testServer    *httptest.Server
+	backendClient *clients.BackendClient
+	testSpan      *sentry.Span
 }
 
 func TestAssignments(t *testing.T) {
-	suite.Run(t, new(AssignmentsTestSuite))
+	suite.Run(t, new(AssignmentTestSuite))
 }
 
-func (s *AssignmentsTestSuite) SetupTest() {
-	s.mockClient = new(MockHakaseClient)
-	s.testSpan = sentry.StartSpan(context.Background(), s.T().Name())
+func (testSuite *AssignmentTestSuite) SetupTest() {
+	// Create a test HTTP server that we can control
+	testSuite.testServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// This will be overridden in individual tests
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{}`))
+	}))
+
+	testSuite.backendClient = &clients.BackendClient{
+		URL:        testSuite.testServer.URL,
+		AuthToken:  "test-token",
+		HTTPClient: testSuite.testServer.Client(),
+	}
+	testSuite.testSpan = sentry.StartSpan(context.Background(), testSuite.T().Name())
 }
 
-func (s *AssignmentsTestSuite) TearDownTest() {
-	s.testSpan.Finish()
-	s.mockClient.AssertExpectations(s.T())
+func (testSuite *AssignmentTestSuite) TearDownTest() {
+	testSuite.testSpan.Finish()
+	testSuite.testServer.Close()
 }
 
-func (s *AssignmentsTestSuite) TestReadAssignmentSuccess() {
-	testAssignment := Assignment{
+// Test ReadAssignment with successful API response
+func (testSuite *AssignmentTestSuite) TestReadAssignmentSuccess() {
+	testTime := time.Now()
+	testAssignment := clients.Assignment{
 		ID:       "test-id",
 		CourseID: "test-course",
 		Name:     "Test Assignment",
-		Due:      time.Now(),
+		Due:      &testTime,
 		URL:      "https://example.com",
 	}
 
-	s.mockClient.On("ReadAssignment", s.testSpan, "test-id").Return(testAssignment, nil)
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify the request
+		testSuite.Equal(http.MethodGet, r.Method)
+		testSuite.Equal("/objects/Assignment/test-id", r.URL.Path)
+		testSuite.Equal("Bearer test-token", r.Header.Get("authorization"))
 
-	result, err := s.mockClient.ReadAssignment(s.testSpan, "test-id")
-	s.NoError(err)
-	s.Equal(testAssignment, result)
+		// Return mock response
+		w.WriteHeader(http.StatusOK)
+		responseJSON := fmt.Sprintf(`{
+			"id": "%s",
+			"courseId": "%s",
+			"name": "%s",
+			"due": "%s",
+			"url": "%s"
+		}`, testAssignment.ID, testAssignment.CourseID, testAssignment.Name, testTime.Format(time.RFC3339), testAssignment.URL)
+		w.Write([]byte(responseJSON))
+	})
+
+	result, err := testSuite.backendClient.ReadAssignment(testSuite.testSpan, "test-id")
+	testSuite.NoError(err)
+	testSuite.Equal(testAssignment.ID, result.ID)
+	testSuite.Equal(testAssignment.Name, result.Name)
+	testSuite.Equal(testAssignment.CourseID, result.CourseID)
 }
 
-func (s *AssignmentsTestSuite) TestReadAssignmentError() {
-	s.mockClient.On("ReadAssignment", s.testSpan, "invalid-id").Return(Assignment{}, fmt.Errorf("not found"))
+// Test ReadAssignment with error response
+func (testSuite *AssignmentTestSuite) TestReadAssignmentError() {
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"error": "not found"}`))
+	})
 
-	result, err := s.mockClient.ReadAssignment(s.testSpan, "invalid-id")
-	s.Error(err)
-	s.Equal(Assignment{}, result)
+	result, err := testSuite.backendClient.ReadAssignment(testSuite.testSpan, "invalid-id")
+	testSuite.Error(err)
+	testSuite.Equal("", result.ID)
 }
 
-func (s *AssignmentsTestSuite) TestListAssignmentsSuccess() {
-	testAssignments := []Assignment{
-		{ID: "1", CourseID: "course-1", Name: "Assignment 1", Due: time.Now(), URL: "https://example.com/1"},
-		{ID: "2", CourseID: "course-1", Name: "Assignment 2", Due: time.Now(), URL: "https://example.com/2"},
+// Test ListAssignments with successful API response
+func (testSuite *AssignmentTestSuite) TestListAssignmentsSuccess() {
+	testTime1 := time.Now()
+	testTime2 := testTime1.Add(24 * time.Hour)
+	testAssignments := []clients.Assignment{
+		{
+			ID:       "assignment-1",
+			CourseID: "course-1",
+			Name:     "Assignment 1",
+			Due:      &testTime1,
+			URL:      "https://example.com/1",
+		},
+		{
+			ID:       "assignment-2",
+			CourseID: "course-1",
+			Name:     "Assignment 2",
+			Due:      &testTime2,
+			URL:      "https://example.com/2",
+		},
 	}
 
-	s.mockClient.On("ListAssignments", s.testSpan, "course-1").Return(testAssignments, nil)
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify the request
+		testSuite.Equal(http.MethodGet, r.Method)
+		testSuite.Equal("/objects/Course/course-1/links/assignments", r.URL.Path)
+		testSuite.Equal("Bearer test-token", r.Header.Get("authorization"))
 
-	result, err := s.mockClient.ListAssignments(s.testSpan, "course-1")
-	s.NoError(err)
-	s.Equal(testAssignments, result)
+		// Return mock response
+		w.WriteHeader(http.StatusOK)
+		responseJSON := fmt.Sprintf(`{
+			"data": [
+				{
+					"id": "%s",
+					"courseId": "%s",
+					"name": "%s",
+					"due": "%s",
+					"url": "%s"
+				},
+				{
+					"id": "%s",
+					"courseId": "%s",
+					"name": "%s",
+					"due": "%s",
+					"url": "%s"
+				}
+			]
+		}`, testAssignments[0].ID, testAssignments[0].CourseID, testAssignments[0].Name, testTime1.Format(time.RFC3339), testAssignments[0].URL,
+			testAssignments[1].ID, testAssignments[1].CourseID, testAssignments[1].Name, testTime2.Format(time.RFC3339), testAssignments[1].URL)
+		w.Write([]byte(responseJSON))
+	})
+
+	result, err := testSuite.backendClient.ListAssignments(testSuite.testSpan, "course-1")
+	testSuite.NoError(err)
+	testSuite.Len(result, 2)
+	testSuite.Equal(testAssignments[0].ID, result[0].ID)
+	testSuite.Equal(testAssignments[1].ID, result[1].ID)
 }
 
-func (s *AssignmentsTestSuite) TestListAssignmentsError() {
-	s.mockClient.On("ListAssignments", s.testSpan, "invalid-course").Return([]Assignment{}, fmt.Errorf("not found"))
+// Test ListAssignments with error response
+func (testSuite *AssignmentTestSuite) TestListAssignmentsError() {
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"error": "not found"}`))
+	})
 
-	result, err := s.mockClient.ListAssignments(s.testSpan, "invalid-course")
-	s.Error(err)
-	s.Equal([]Assignment{}, result)
+	result, err := testSuite.backendClient.ListAssignments(testSuite.testSpan, "invalid-course")
+	testSuite.Error(err)
+	testSuite.Equal(0, len(result))
 }
 
-func (s *AssignmentsTestSuite) TestCreateAssignmentSuccess() {
-	testAssignment := Assignment{
-		ID:       "new-id",
+// Test CreateAssignment with successful API response
+func (testSuite *AssignmentTestSuite) TestCreateAssignmentSuccess() {
+	testTime := time.Now()
+	testAssignment := clients.Assignment{
 		CourseID: "course-1",
 		Name:     "New Assignment",
-		Due:      time.Now(),
+		Due:      &testTime,
 		URL:      "https://example.com/new",
 	}
 
-	s.mockClient.On("CreateAssignment", s.testSpan, testAssignment).Return(testAssignment, nil)
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify the request
+		testSuite.Equal(http.MethodPost, r.Method)
+		testSuite.Equal("/actions/create-assignment/apply", r.URL.Path)
+		testSuite.Equal("Bearer test-token", r.Header.Get("authorization"))
+		testSuite.Equal("application/json", r.Header.Get("content-type"))
 
-	result, err := s.mockClient.CreateAssignment(s.testSpan, testAssignment)
-	s.NoError(err)
-	s.Equal(testAssignment, result)
+		// Return mock response
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{
+			"validation": {
+				"result": "VALID"
+			},
+			"edits": {
+				"edits": [
+					{
+						"primaryKey": "created-assignment-id"
+					}
+				]
+			}
+		}`))
+	})
+
+	createdID, err := testSuite.backendClient.CreateAssignment(testSuite.testSpan, testAssignment)
+	testSuite.NoError(err)
+	testSuite.Equal("created-assignment-id", createdID)
 }
 
-func (s *AssignmentsTestSuite) TestCreateAssignmentError() {
-	testAssignment := Assignment{
+// Test CreateAssignment with error response
+func (testSuite *AssignmentTestSuite) TestCreateAssignmentError() {
+	testTime := time.Now()
+	testAssignment := clients.Assignment{
 		CourseID: "invalid-course",
 		Name:     "Invalid Assignment",
-		Due:      time.Now(),
+		Due:      &testTime,
 		URL:      "https://example.com/invalid",
 	}
 
-	s.mockClient.On("CreateAssignment", s.testSpan, testAssignment).Return(Assignment{}, fmt.Errorf("validation failed"))
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{
+			"validation": {
+				"result": "INVALID"
+			}
+		}`))
+	})
 
-	result, err := s.mockClient.CreateAssignment(s.testSpan, testAssignment)
-	s.Error(err)
-	s.Equal(Assignment{}, result)
+	createdID, err := testSuite.backendClient.CreateAssignment(testSuite.testSpan, testAssignment)
+	testSuite.Error(err)
+	testSuite.Equal("", createdID)
 }
 
-func (s *AssignmentsTestSuite) TestUpdateAssignmentSuccess() {
-	testAssignment := Assignment{
+// Test UpdateAssignment with successful API response
+func (testSuite *AssignmentTestSuite) TestUpdateAssignmentSuccess() {
+	testTime := time.Now()
+	testAssignment := clients.Assignment{
 		ID:       "existing-id",
 		CourseID: "course-1",
 		Name:     "Updated Assignment",
-		Due:      time.Now(),
+		Due:      &testTime,
 		URL:      "https://example.com/updated",
 	}
 
-	s.mockClient.On("UpdateAssignment", s.testSpan, testAssignment).Return(testAssignment, nil)
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify the request
+		testSuite.Equal(http.MethodPost, r.Method)
+		testSuite.Equal("/actions/edit-assignment/apply", r.URL.Path)
+		testSuite.Equal("Bearer test-token", r.Header.Get("authorization"))
 
-	result, err := s.mockClient.UpdateAssignment(s.testSpan, testAssignment)
-	s.NoError(err)
-	s.Equal(testAssignment, result)
+		// Return mock response
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{
+			"validation": {
+				"result": "VALID"
+			}
+		}`))
+	})
+
+	err := testSuite.backendClient.UpdateAssignment(testSuite.testSpan, testAssignment)
+	testSuite.NoError(err)
 }
 
-func (s *AssignmentsTestSuite) TestUpdateAssignmentError() {
-	testAssignment := Assignment{
+// Test UpdateAssignment with error response
+func (testSuite *AssignmentTestSuite) TestUpdateAssignmentError() {
+	testTime := time.Now()
+	testAssignment := clients.Assignment{
 		ID:       "invalid-id",
 		CourseID: "course-1",
 		Name:     "Invalid Update",
-		Due:      time.Now(),
+		Due:      &testTime,
 		URL:      "https://example.com/invalid",
 	}
 
-	s.mockClient.On("UpdateAssignment", s.testSpan, testAssignment).Return(Assignment{}, fmt.Errorf("not found"))
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"error": "not found"}`))
+	})
 
-	result, err := s.mockClient.UpdateAssignment(s.testSpan, testAssignment)
-	s.Error(err)
-	s.Equal(Assignment{}, result)
+	err := testSuite.backendClient.UpdateAssignment(testSuite.testSpan, testAssignment)
+	testSuite.Error(err)
 }
 
-func (s *AssignmentsTestSuite) TestDeleteAssignmentSuccess() {
-	s.mockClient.On("DeleteAssignment", s.testSpan, "test-id").Return(nil)
+// Test DeleteAssignment with successful API response
+func (testSuite *AssignmentTestSuite) TestDeleteAssignmentSuccess() {
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify the request
+		testSuite.Equal(http.MethodPost, r.Method)
+		testSuite.Equal("/actions/delete-assignment/apply", r.URL.Path)
+		testSuite.Equal("Bearer test-token", r.Header.Get("authorization"))
 
-	err := s.mockClient.DeleteAssignment(s.testSpan, "test-id")
-	s.NoError(err)
+		// Return mock response
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{
+			"validation": {
+				"result": "VALID"
+			}
+		}`))
+	})
+
+	err := testSuite.backendClient.DeleteAssignment(testSuite.testSpan, "test-assignment-id")
+	testSuite.NoError(err)
 }
 
-func (s *AssignmentsTestSuite) TestDeleteAssignmentError() {
-	s.mockClient.On("DeleteAssignment", s.testSpan, "invalid-id").Return(fmt.Errorf("not found"))
+// Test DeleteAssignment with error response
+func (testSuite *AssignmentTestSuite) TestDeleteAssignmentError() {
+	// Reset the test server handler for this specific test
+	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"error": "not found"}`))
+	})
 
-	err := s.mockClient.DeleteAssignment(s.testSpan, "invalid-id")
-	s.Error(err)
+	err := testSuite.backendClient.DeleteAssignment(testSuite.testSpan, "invalid-assignment-id")
+	testSuite.Error(err)
 }

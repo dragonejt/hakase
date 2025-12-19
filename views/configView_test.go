@@ -1,10 +1,11 @@
-package views
+package views_test
 
 import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/dragonejt/hakase-discord/clients"
+	"github.com/dragonejt/hakase-discord/views"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -20,7 +21,7 @@ func TestConfigView(t *testing.T) {
 // Test ConfigView with empty course
 func (s *ConfigViewTestSuite) TestConfigViewEmpty() {
 	emptyCourse := clients.Course{}
-	embed := ConfigView(emptyCourse)
+	embed := views.ConfigView(emptyCourse)
 
 	s.NotNil(embed)
 	s.Equal("course config", embed.Title)
@@ -38,7 +39,7 @@ func (s *ConfigViewTestSuite) TestConfigViewChannelOnly() {
 		NotifyChannel: "123456789",
 		NotifyGroup:   "",
 	}
-	embed := ConfigView(testCourse)
+	embed := views.ConfigView(testCourse)
 
 	s.NotNil(embed)
 	s.Equal("course config", embed.Title)
@@ -56,7 +57,7 @@ func (s *ConfigViewTestSuite) TestConfigViewRoleOnly() {
 		NotifyChannel: "",
 		NotifyGroup:   "987654321",
 	}
-	embed := ConfigView(testCourse)
+	embed := views.ConfigView(testCourse)
 
 	s.NotNil(embed)
 	s.Equal("course config", embed.Title)
@@ -74,7 +75,7 @@ func (s *ConfigViewTestSuite) TestConfigViewBoth() {
 		NotifyChannel: "123456789",
 		NotifyGroup:   "987654321",
 	}
-	embed := ConfigView(testCourse)
+	embed := views.ConfigView(testCourse)
 
 	s.NotNil(embed)
 	s.Equal("course config", embed.Title)
@@ -87,7 +88,7 @@ func (s *ConfigViewTestSuite) TestConfigViewBoth() {
 
 // Test ConfigActions
 func (s *ConfigViewTestSuite) TestConfigActions() {
-	components := ConfigActions()
+	components := views.ConfigActions()
 
 	s.Len(components, 2)
 
