@@ -16,7 +16,7 @@ import (
 )
 
 // AddAssignment opens a modal for adding a new assignment via Discord interaction.
-func AddAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) AddAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "addAssignmentAction")
 	defer transaction.Finish()
 	slog.Debug(fmt.Sprintf("addAssignment executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
@@ -49,7 +49,7 @@ func AddAssignment(bot *discordgo.Session, interactionCreate *discordgo.Interact
 }
 
 // AddAssignmentSubmit handles the submission of the add assignment modal and creates the assignment.
-func AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate, hakaseClient clients.HakaseClient) {
+func (handler *InteractionHandler) AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	slog.Info(fmt.Sprintf("addAssignmentSubmit executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
 	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "addAssignmentSubmit")
 	defer transaction.Finish()
@@ -93,7 +93,7 @@ func AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.In
 		return
 	}
 
-	createdAssignmentID, err := hakaseClient.CreateAssignment(transaction, assignment)
+	createdAssignmentID, err := handler.HakaseClient.CreateAssignment(transaction, assignment)
 	if err != nil {
 		_, err := bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
 			Content: err.Error(),
@@ -104,7 +104,7 @@ func AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.In
 		}
 		return
 	}
-	createdAssignment, err := hakaseClient.ReadAssignment(transaction, createdAssignmentID)
+	createdAssignment, err := handler.HakaseClient.ReadAssignment(transaction, createdAssignmentID)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "error getting created assignment with id: %s", createdAssignmentID).Error())
 		_, err := bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{

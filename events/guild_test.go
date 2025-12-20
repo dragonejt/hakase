@@ -18,6 +18,7 @@ type GuildEventsTestSuite struct {
 	guildCreate  *discordgo.GuildCreate
 	guildDelete  *discordgo.GuildDelete
 	hakaseClient *MockHakaseClient
+	event        *events.EventHandler
 }
 
 func TestGuildEvents(t *testing.T) {
@@ -55,13 +56,16 @@ func (testSuite *GuildEventsTestSuite) SetupTest() {
 		BeforeDelete: guild,
 	}
 	testSuite.hakaseClient = new(MockHakaseClient)
+	testSuite.event = &events.EventHandler{
+		HakaseClient: testSuite.hakaseClient,
+	}
 }
 
 func (testSuite *GuildEventsTestSuite) TestGuildCreateSuccess() {
 	testSuite.hakaseClient.On("CreateCourse", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		slog.Info("CreateCourse called")
 	})
-	events.GuildCreate(testSuite.bot, testSuite.guildCreate, testSuite.hakaseClient)
+	testSuite.event.GuildCreate(testSuite.bot, testSuite.guildCreate)
 	testSuite.hakaseClient.AssertExpectations(testSuite.T())
 }
 
@@ -69,6 +73,6 @@ func (testSuite *GuildEventsTestSuite) TestGuildDeleteSuccess() {
 	testSuite.hakaseClient.On("DeleteCourse", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		slog.Info("DeleteCourse called")
 	})
-	events.GuildDelete(testSuite.bot, testSuite.guildDelete, testSuite.hakaseClient)
+	testSuite.event.GuildDelete(testSuite.bot, testSuite.guildDelete)
 	testSuite.hakaseClient.AssertExpectations(testSuite.T())
 }

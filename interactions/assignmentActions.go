@@ -17,7 +17,7 @@ import (
 )
 
 // UpdateAssignment opens a modal for updating an assignment via Discord interaction.
-func UpdateAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate, hakaseClient clients.HakaseClient) {
+func (handler *InteractionHandler) UpdateAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "updateAssignmentAction")
 	defer transaction.Finish()
 	slog.Debug(fmt.Sprintf("updateAssignment executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
@@ -36,7 +36,7 @@ func UpdateAssignment(bot *discordgo.Session, interactionCreate *discordgo.Inter
 	}
 
 	assignmentID := strings.Split(interactionCreate.MessageComponentData().CustomID, "_")[1]
-	assignment, err := hakaseClient.ReadAssignment(transaction, assignmentID)
+	assignment, err := handler.HakaseClient.ReadAssignment(transaction, assignmentID)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "error reading assignment").Error())
 		err := bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
@@ -49,6 +49,7 @@ func UpdateAssignment(bot *discordgo.Session, interactionCreate *discordgo.Inter
 		if err != nil {
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
+		return
 	}
 	err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseModal,
@@ -64,7 +65,7 @@ func UpdateAssignment(bot *discordgo.Session, interactionCreate *discordgo.Inter
 }
 
 // UpdateAssignmentSubmit handles the submission of the update assignment modal and updates the assignment.
-func UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate, hakaseClient clients.HakaseClient) {
+func (handler *InteractionHandler) UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	slog.Info(fmt.Sprintf("updateAssignmentSubmit executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
 	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "updateAssignmentSubmit")
 	defer transaction.Finish()
@@ -78,7 +79,7 @@ func UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo
 
 	assignmentID := strings.Split(interactionCreate.ModalSubmitData().CustomID, "_")[1]
 	assignmentData := interactionCreate.ModalSubmitData()
-	assignment, err := hakaseClient.ReadAssignment(transaction, assignmentID)
+	assignment, err := handler.HakaseClient.ReadAssignment(transaction, assignmentID)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "error getting current assignment with id: %s", assignmentID).Error())
 	}
@@ -105,7 +106,7 @@ func UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo
 		assignment.URL = assignmentData.Components[2].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value
 	}
 
-	currentAssignment, err := hakaseClient.ReadAssignment(transaction, assignmentID)
+	currentAssignment, err := handler.HakaseClient.ReadAssignment(transaction, assignmentID)
 	if assignment.Due.Equal(time.Time{}) {
 		assignment.Due = currentAssignment.Due
 	} else if err == nil && assignment.Due.Before(*currentAssignment.Due) {
@@ -119,7 +120,7 @@ func UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo
 	}
 
 	assignment.Assignment = currentAssignment.ID
-	err = hakaseClient.UpdateAssignment(transaction, assignment)
+	err = handler.HakaseClient.UpdateAssignment(transaction, assignment)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "error updating assignment").Error())
 		_, err := bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
@@ -131,7 +132,7 @@ func UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo
 		}
 		return
 	}
-	updatedAssignment, err := hakaseClient.ReadAssignment(transaction, assignmentID)
+	updatedAssignment, err := handler.HakaseClient.ReadAssignment(transaction, assignmentID)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "error reading updated assignment").Error())
 		_, err := bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
@@ -155,13 +156,13 @@ func UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo
 }
 
 // DeleteAssignment deletes an assignment based on user interaction.
-func DeleteAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate, hakaseClient clients.HakaseClient) {
+func (handler *InteractionHandler) DeleteAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	slog.Debug(fmt.Sprintf("deleteAssignment executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
 	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "deleteAssignmentAction")
 	defer transaction.Finish()
 
 	assignmentID := strings.Split(interactionCreate.MessageComponentData().CustomID, "_")[1]
-	err := hakaseClient.DeleteAssignment(transaction, assignmentID)
+	err := handler.HakaseClient.DeleteAssignment(transaction, assignmentID)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "unable to delete assignment %s", assignmentID).Error())
 		err := bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{

@@ -58,20 +58,13 @@ func main() {
 		AuthToken:  settings.BACKEND_AUTH_TOKEN,
 		HTTPClient: bot.Client,
 	}
+	event := events.EventHandler{HakaseClient: hakaseClient, InteractionHandler: &interactions.InteractionHandler{HakaseClient: hakaseClient}}
 
 	slog.Info("registering event handlers")
-	bot.AddHandler(func(bot *discordgo.Session, ready *discordgo.Ready) {
-		events.Ready(bot, ready, hakaseClient)
-	})
-	bot.AddHandler(func(bot *discordgo.Session, guildCreate *discordgo.GuildCreate) {
-		events.GuildCreate(bot, guildCreate, hakaseClient)
-	})
-	bot.AddHandler(func(bot *discordgo.Session, guildDelete *discordgo.GuildDelete) {
-		events.GuildDelete(bot, guildDelete, hakaseClient)
-	})
-	bot.AddHandler(func(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-		events.InteractionCreate(bot, interactionCreate, hakaseClient)
-	})
+	bot.AddHandler(event.Ready)
+	bot.AddHandler(event.GuildCreate)
+	bot.AddHandler(event.GuildDelete)
+	bot.AddHandler(event.InteractionCreate)
 
 	slog.Info("registering interactions")
 	interactions := []*discordgo.ApplicationCommand{&interactions.AssignmentsCommand, &interactions.HakaseCommand}
