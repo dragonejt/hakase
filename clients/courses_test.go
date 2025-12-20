@@ -29,7 +29,9 @@ func (testSuite *CourseTestSuite) SetupTest() {
 	testSuite.testServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// This will be overridden in individual tests
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{}`))
+		if _, err := w.Write([]byte(`{}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	}))
 
 	testSuite.backendClient = &clients.BackendClient{
@@ -69,7 +71,9 @@ func (testSuite *CourseTestSuite) TestReadCourseSuccess() {
 			"notifyChannel": "%s",
 			"notifyGroup": "%s"
 		}`, testCourse.Course, testCourse.CourseID, testCourse.NotifyChannel, testCourse.NotifyGroup)
-		w.Write([]byte(responseJSON))
+		if _, err := w.Write([]byte(responseJSON)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	result, err := testSuite.backendClient.ReadCourse(testSuite.testSpan, "course-1")
@@ -85,7 +89,9 @@ func (testSuite *CourseTestSuite) TestReadCourseError() {
 	// Reset the test server handler for this specific test
 	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "not found"}`))
+		if _, err := w.Write([]byte(`{"error": "not found"}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	result, err := testSuite.backendClient.ReadCourse(testSuite.testSpan, "invalid-course")
@@ -111,11 +117,13 @@ func (testSuite *CourseTestSuite) TestCreateCourseSuccess() {
 
 		// Return mock response
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{
+		if _, err := w.Write([]byte(`{
 			"validation": {
 				"result": "VALID"
 			}
-		}`))
+		}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	err := testSuite.backendClient.CreateCourse(testSuite.testSpan, testCourse)
@@ -134,11 +142,13 @@ func (testSuite *CourseTestSuite) TestCreateCourseError() {
 	// Reset the test server handler for this specific test
 	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{
+		if _, err := w.Write([]byte(`{
 			"validation": {
 				"result": "INVALID"
 			}
-		}`))
+		}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	err := testSuite.backendClient.CreateCourse(testSuite.testSpan, testCourse)
@@ -163,11 +173,13 @@ func (testSuite *CourseTestSuite) TestUpdateCourseSuccess() {
 
 		// Return mock response
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{
+		if _, err := w.Write([]byte(`{
 			"validation": {
 				"result": "VALID"
 			}
-		}`))
+		}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	err := testSuite.backendClient.UpdateCourse(testSuite.testSpan, testCourse)
@@ -186,7 +198,9 @@ func (testSuite *CourseTestSuite) TestUpdateCourseError() {
 	// Reset the test server handler for this specific test
 	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "not found"}`))
+		if _, err := w.Write([]byte(`{"error": "not found"}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	err := testSuite.backendClient.UpdateCourse(testSuite.testSpan, testCourse)
@@ -204,11 +218,13 @@ func (testSuite *CourseTestSuite) TestDeleteCourseSuccess() {
 
 		// Return mock response
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{
+		if _, err := w.Write([]byte(`{
 			"validation": {
 				"result": "VALID"
 			}
-		}`))
+		}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	err := testSuite.backendClient.DeleteCourse(testSuite.testSpan, "course-1")
@@ -220,7 +236,9 @@ func (testSuite *CourseTestSuite) TestDeleteCourseError() {
 	// Reset the test server handler for this specific test
 	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "not found"}`))
+		if _, err := w.Write([]byte(`{"error": "not found"}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	err := testSuite.backendClient.DeleteCourse(testSuite.testSpan, "invalid-course")

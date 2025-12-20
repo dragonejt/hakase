@@ -131,6 +131,7 @@ func (handler *InteractionHandler) config(span *sentry.Span, interactionCreate *
 		if err != nil {
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
+		return
 	}
 
 	err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{

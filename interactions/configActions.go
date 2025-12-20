@@ -46,6 +46,7 @@ func (handler *InteractionHandler) UpdateNotifyChannel(bot *discordgo.Session, i
 		if err != nil {
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
+		return
 	}
 	course.Course = interactionCreate.GuildID
 	course.NotifyChannel = notifyChannel
@@ -62,6 +63,7 @@ func (handler *InteractionHandler) UpdateNotifyChannel(bot *discordgo.Session, i
 		if err != nil {
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
+		return
 	}
 
 	updatedCourse, err := handler.HakaseClient.ReadCourse(transaction, interactionCreate.GuildID)
@@ -77,6 +79,7 @@ func (handler *InteractionHandler) UpdateNotifyChannel(bot *discordgo.Session, i
 		if err != nil {
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
+		return
 	}
 
 	err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
@@ -124,6 +127,7 @@ func (handler *InteractionHandler) UpdateNotifyRole(bot *discordgo.Session, inte
 		if err != nil {
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
+		return
 	}
 	course.Course = interactionCreate.GuildID
 	course.NotifyGroup = notifyRole
@@ -140,6 +144,7 @@ func (handler *InteractionHandler) UpdateNotifyRole(bot *discordgo.Session, inte
 		if err != nil {
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
+		return
 	}
 
 	updatedCourse, err := handler.HakaseClient.ReadCourse(transaction, interactionCreate.GuildID)
@@ -155,6 +160,7 @@ func (handler *InteractionHandler) UpdateNotifyRole(bot *discordgo.Session, inte
 		if err != nil {
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
+		return
 	}
 
 	err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{

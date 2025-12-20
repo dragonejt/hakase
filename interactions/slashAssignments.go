@@ -41,7 +41,6 @@ func (handler *InteractionHandler) SlashAssignments(bot *discordgo.Session, inte
 	assignmentID, exists := optionMap["id"]
 	if exists {
 		handler.getAssignment(transaction, interactionCreate, assignmentID.StringValue())
-
 	} else {
 		handler.listAssignments(transaction, interactionCreate)
 	}

@@ -49,6 +49,7 @@ func (handler *InteractionHandler) UpdateAssignment(bot *discordgo.Session, inte
 		if err != nil {
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
+		return
 	}
 	err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseModal,

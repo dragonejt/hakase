@@ -30,7 +30,9 @@ func (testSuite *AssignmentTestSuite) SetupTest() {
 	testSuite.testServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// This will be overridden in individual tests
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{}`))
+		if _, err := w.Write([]byte(`{}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	}))
 
 	testSuite.backendClient = &clients.BackendClient{
@@ -73,7 +75,9 @@ func (testSuite *AssignmentTestSuite) TestReadAssignmentSuccess() {
 			"due": "%s",
 			"url": "%s"
 		}`, testAssignment.ID, testAssignment.CourseID, testAssignment.Name, testTime.Format(time.RFC3339), testAssignment.URL)
-		w.Write([]byte(responseJSON))
+		if _, err := w.Write([]byte(responseJSON)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	result, err := testSuite.backendClient.ReadAssignment(testSuite.testSpan, "test-id")
@@ -88,7 +92,9 @@ func (testSuite *AssignmentTestSuite) TestReadAssignmentError() {
 	// Reset the test server handler for this specific test
 	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "not found"}`))
+		if _, err := w.Write([]byte(`{"error": "not found"}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	result, err := testSuite.backendClient.ReadAssignment(testSuite.testSpan, "invalid-id")
@@ -145,7 +151,9 @@ func (testSuite *AssignmentTestSuite) TestListAssignmentsSuccess() {
 			]
 		}`, testAssignments[0].ID, testAssignments[0].CourseID, testAssignments[0].Name, testTime1.Format(time.RFC3339), testAssignments[0].URL,
 			testAssignments[1].ID, testAssignments[1].CourseID, testAssignments[1].Name, testTime2.Format(time.RFC3339), testAssignments[1].URL)
-		w.Write([]byte(responseJSON))
+		if _, err := w.Write([]byte(responseJSON)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	result, err := testSuite.backendClient.ListAssignments(testSuite.testSpan, "course-1")
@@ -160,7 +168,9 @@ func (testSuite *AssignmentTestSuite) TestListAssignmentsError() {
 	// Reset the test server handler for this specific test
 	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "not found"}`))
+		if _, err := w.Write([]byte(`{"error": "not found"}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	result, err := testSuite.backendClient.ListAssignments(testSuite.testSpan, "invalid-course")
@@ -188,7 +198,7 @@ func (testSuite *AssignmentTestSuite) TestCreateAssignmentSuccess() {
 
 		// Return mock response
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{
+		if _, err := w.Write([]byte(`{
 			"validation": {
 				"result": "VALID"
 			},
@@ -199,7 +209,9 @@ func (testSuite *AssignmentTestSuite) TestCreateAssignmentSuccess() {
 					}
 				]
 			}
-		}`))
+		}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	createdID, err := testSuite.backendClient.CreateAssignment(testSuite.testSpan, testAssignment)
@@ -220,11 +232,13 @@ func (testSuite *AssignmentTestSuite) TestCreateAssignmentError() {
 	// Reset the test server handler for this specific test
 	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{
+		if _, err := w.Write([]byte(`{
 			"validation": {
 				"result": "INVALID"
 			}
-		}`))
+		}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	createdID, err := testSuite.backendClient.CreateAssignment(testSuite.testSpan, testAssignment)
@@ -252,11 +266,13 @@ func (testSuite *AssignmentTestSuite) TestUpdateAssignmentSuccess() {
 
 		// Return mock response
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{
+		if _, err := w.Write([]byte(`{
 			"validation": {
 				"result": "VALID"
 			}
-		}`))
+		}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	err := testSuite.backendClient.UpdateAssignment(testSuite.testSpan, testAssignment)
@@ -277,7 +293,9 @@ func (testSuite *AssignmentTestSuite) TestUpdateAssignmentError() {
 	// Reset the test server handler for this specific test
 	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "not found"}`))
+		if _, err := w.Write([]byte(`{"error": "not found"}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	err := testSuite.backendClient.UpdateAssignment(testSuite.testSpan, testAssignment)
@@ -295,11 +313,13 @@ func (testSuite *AssignmentTestSuite) TestDeleteAssignmentSuccess() {
 
 		// Return mock response
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{
+		if _, err := w.Write([]byte(`{
 			"validation": {
 				"result": "VALID"
 			}
-		}`))
+		}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	err := testSuite.backendClient.DeleteAssignment(testSuite.testSpan, "test-assignment-id")
@@ -311,7 +331,9 @@ func (testSuite *AssignmentTestSuite) TestDeleteAssignmentError() {
 	// Reset the test server handler for this specific test
 	testSuite.testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "not found"}`))
+		if _, err := w.Write([]byte(`{"error": "not found"}`)); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	err := testSuite.backendClient.DeleteAssignment(testSuite.testSpan, "invalid-assignment-id")
