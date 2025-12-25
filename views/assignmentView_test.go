@@ -35,7 +35,7 @@ func (s *AssignmentViewTestSuite) TestAssignmentView() {
 	testAssignment := clients.Assignment{
 		ID:       "test-id-1",
 		Name:     "Test Assignment",
-		Due:      &testTime,
+		Due:      testTime,
 		URL:      "https://example.com/assignment",
 		CourseID: "test-course",
 	}
@@ -120,7 +120,7 @@ func (s *AssignmentViewTestSuite) TestAssignmentModalExisting() {
 	testAssignment := &clients.Assignment{
 		ID:   "test-id-1",
 		Name: "Existing Assignment",
-		Due:  &testTime,
+		Due:  testTime,
 		URL:  "https://example.com/existing",
 	}
 

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -14,13 +15,13 @@ import (
 )
 
 type Assignment struct {
-	Assignment string     `json:"Assignment,omitempty"`
-	ID         string     `json:"id,omitempty"`
-	CourseID   string     `json:"courseId,omitempty"`
-	Status     string     `json:"status,omitempty"`
-	Name       string     `json:"name,omitempty"`
-	Due        *time.Time `json:"due,omitempty"`
-	URL        string     `json:"url,omitempty"`
+	Assignment string    `json:"Assignment,omitempty"`
+	ID         string    `json:"id,omitempty"`
+	CourseID   string    `json:"courseId,omitempty"`
+	Status     string    `json:"status,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	Due        time.Time `json:"due,omitzero"`
+	URL        string    `json:"url,omitempty"`
 }
 
 var AssignmentStatus = []string{"not due", "one day", "one hour"}
@@ -41,7 +42,7 @@ type SearchAssignmentsRequest struct {
 type SearchAssignmentsQuery struct {
 	Type  string `json:"type,omitempty"`
 	Field string `json:"field,omitempty"`
-	Value string `json:"value,omitempty"`
+	Value any    `json:"value,omitempty"`
 }
 
 // ReadAssignment retrieves an assignment by its ID from the backend.
@@ -155,6 +156,7 @@ func (backend *BackendClient) SearchAssignments(span *sentry.Span, searchQuery S
 	if err != nil {
 		return searchAssignmentsResponse.Data, stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
 	}
+	slog.Info(string(body))
 
 	err = json.Unmarshal(body, &searchAssignmentsResponse)
 	if err != nil {

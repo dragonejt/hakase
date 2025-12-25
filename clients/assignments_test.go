@@ -50,12 +50,11 @@ func (testSuite *AssignmentTestSuite) TearDownTest() {
 
 // Test ReadAssignment with successful API response
 func (testSuite *AssignmentTestSuite) TestReadAssignmentSuccess() {
-	testTime := time.Now()
 	testAssignment := clients.Assignment{
 		ID:       "test-id",
 		CourseID: "test-course",
 		Name:     "Test Assignment",
-		Due:      &testTime,
+		Due:      time.Now(),
 		URL:      "https://example.com",
 	}
 
@@ -74,7 +73,7 @@ func (testSuite *AssignmentTestSuite) TestReadAssignmentSuccess() {
 			"name": "%s",
 			"due": "%s",
 			"url": "%s"
-		}`, testAssignment.ID, testAssignment.CourseID, testAssignment.Name, testTime.Format(time.RFC3339), testAssignment.URL)
+		}`, testAssignment.ID, testAssignment.CourseID, testAssignment.Name, time.Now().Format(time.RFC3339), testAssignment.URL)
 		if _, err := w.Write([]byte(responseJSON)); err != nil {
 			http.Error(w, "Failed to write response", http.StatusInternalServerError)
 		}
@@ -111,14 +110,14 @@ func (testSuite *AssignmentTestSuite) TestListAssignmentsSuccess() {
 			ID:       "assignment-1",
 			CourseID: "course-1",
 			Name:     "Assignment 1",
-			Due:      &testTime1,
+			Due:      testTime1,
 			URL:      "https://example.com/1",
 		},
 		{
 			ID:       "assignment-2",
 			CourseID: "course-1",
 			Name:     "Assignment 2",
-			Due:      &testTime2,
+			Due:      testTime2,
 			URL:      "https://example.com/2",
 		},
 	}
@@ -180,11 +179,10 @@ func (testSuite *AssignmentTestSuite) TestListAssignmentsError() {
 
 // Test CreateAssignment with successful API response
 func (testSuite *AssignmentTestSuite) TestCreateAssignmentSuccess() {
-	testTime := time.Now()
 	testAssignment := clients.Assignment{
 		CourseID: "course-1",
 		Name:     "New Assignment",
-		Due:      &testTime,
+		Due:      time.Now(),
 		URL:      "https://example.com/new",
 	}
 
@@ -221,11 +219,10 @@ func (testSuite *AssignmentTestSuite) TestCreateAssignmentSuccess() {
 
 // Test CreateAssignment with error response
 func (testSuite *AssignmentTestSuite) TestCreateAssignmentError() {
-	testTime := time.Now()
 	testAssignment := clients.Assignment{
 		CourseID: "invalid-course",
 		Name:     "Invalid Assignment",
-		Due:      &testTime,
+		Due:      time.Now(),
 		URL:      "https://example.com/invalid",
 	}
 
@@ -248,12 +245,11 @@ func (testSuite *AssignmentTestSuite) TestCreateAssignmentError() {
 
 // Test UpdateAssignment with successful API response
 func (testSuite *AssignmentTestSuite) TestUpdateAssignmentSuccess() {
-	testTime := time.Now()
 	testAssignment := clients.Assignment{
 		ID:       "existing-id",
 		CourseID: "course-1",
 		Name:     "Updated Assignment",
-		Due:      &testTime,
+		Due:      time.Now(),
 		URL:      "https://example.com/updated",
 	}
 
@@ -281,12 +277,11 @@ func (testSuite *AssignmentTestSuite) TestUpdateAssignmentSuccess() {
 
 // Test UpdateAssignment with error response
 func (testSuite *AssignmentTestSuite) TestUpdateAssignmentError() {
-	testTime := time.Now()
 	testAssignment := clients.Assignment{
 		ID:       "invalid-id",
 		CourseID: "course-1",
 		Name:     "Invalid Update",
-		Due:      &testTime,
+		Due:      time.Now(),
 		URL:      "https://example.com/invalid",
 	}
 

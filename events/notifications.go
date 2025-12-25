@@ -15,7 +15,7 @@ import (
 	"github.com/palantir/stacktrace"
 )
 
-func (handler *EventHandler) RegisterNotificationHandler(bot *discordgo.Session, signal chan os.Signal) {
+func (handler *EventHandler) RegisterAssignmentHandler(bot *discordgo.Session, signal chan os.Signal) {
 	scheduler, err := gocron.NewScheduler()
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to start cron").Error())
@@ -23,58 +23,90 @@ func (handler *EventHandler) RegisterNotificationHandler(bot *discordgo.Session,
 	}
 
 	task := gocron.NewTask(handler.ProcessAssignments, bot)
-	_, err = scheduler.NewJob(gocron.DurationJob(time.Minute), task)
+	_, err = scheduler.NewJob(gocron.DurationJob(time.Second*5), task)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to schedule new job").Error())
 	}
 
 	scheduler.Start()
-	defer scheduler.Shutdown()
 
 	slog.Info("running assignment notification handler")
 	<-signal
 
+	err = scheduler.Shutdown()
+	if err != nil {
+		slog.Error(stacktrace.Propagate(err, "failed to shut down scheduler").Error())
+	}
+
+}
+
+var AssignmentStatusDuration = map[string]time.Duration{
+	"one hour": time.Hour,
+	"one day":  24 * time.Hour,
 }
 
 func (handler *EventHandler) ProcessAssignments(bot *discordgo.Session) {
-	transaction := sentry.StartTransaction(context.Background(), "sendAssignmentNotifications")
+	transaction := sentry.StartTransaction(context.Background(), "processAssignments")
 	defer transaction.Finish()
 
-	dueInOneDay, err := handler.HakaseClient.SearchAssignments(transaction, clients.SearchAssignmentsQuery{
-		Type:  "eq",
-		Field: "status",
-		Value: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
-	})
-	if err != nil {
-		slog.Error(stacktrace.Propagate(err, "failed to get assignments due in one day").Error())
-	} else {
-		for _, assignment := range dueInOneDay {
-			assignmentStatus := clients.AssignmentStatus[1]
-			go handler.SendAssignmentNotification(transaction, bot, assignment, assignmentStatus)
-			go handler.UpdateAssignmentStatus(transaction, assignment, assignmentStatus)
+	for i, currentStatus := range clients.AssignmentStatus[:len(clients.AssignmentStatus)-1] {
+		newStatus := clients.AssignmentStatus[i+1]
+		assignments, err := handler.HakaseClient.SearchAssignments(transaction, clients.SearchAssignmentsQuery{
+			Type: "and",
+			Value: []clients.SearchAssignmentsQuery{
+				{
+					Type:  "lte",
+					Field: "due",
+					Value: time.Now().UTC().Add(AssignmentStatusDuration[newStatus]),
+				},
+				{
+					Type:  "eq",
+					Field: "status",
+					Value: currentStatus,
+				},
+			},
+		})
+		if err != nil {
+			slog.Error(stacktrace.Propagate(err, "failed to get assignments due in %s", newStatus).Error())
+		} else {
+			for _, assignment := range assignments {
+				go handler.SendAssignmentNotification(transaction, bot, assignment, newStatus)
+				go handler.UpdateAssignmentStatus(transaction, assignment, newStatus)
+			}
+			slog.Info(fmt.Sprintf("sent notifications for %d assignments due in one day.", len(assignments)))
 		}
-		slog.Info(fmt.Sprintf("sent notifications for %d assignments due in one day.", len(dueInOneDay)))
 	}
 
-	dueInOneHour, err := handler.HakaseClient.SearchAssignments(transaction, clients.SearchAssignmentsQuery{
-		Type:  "lte",
-		Field: "due",
-		Value: time.Now().Add(time.Hour).Format(time.RFC3339),
+	toBeDeleted, err := handler.HakaseClient.SearchAssignments(transaction, clients.SearchAssignmentsQuery{
+		Type: "and",
+		Value: []clients.SearchAssignmentsQuery{
+			{
+				Type:  "lte",
+				Field: "due",
+				Value: time.Now().UTC(),
+			},
+			{
+				Type:  "eq",
+				Field: "status",
+				Value: clients.AssignmentStatus[2],
+			},
+		},
 	})
 	if err != nil {
-		slog.Error(stacktrace.Propagate(err, "failed to get assignments due in one hour").Error())
+		slog.Error(stacktrace.Propagate(err, "failed to get assignments to be deleted").Error())
 	} else {
-		for _, assignment := range dueInOneHour {
-			assignmentStatus := clients.AssignmentStatus[2]
-			go handler.SendAssignmentNotification(transaction, bot, assignment, assignmentStatus)
-			go handler.UpdateAssignmentStatus(transaction, assignment, assignmentStatus)
+		for _, assignment := range toBeDeleted {
+			err := handler.HakaseClient.DeleteAssignment(transaction, assignment.ID)
+			if err != nil {
+				slog.Error(stacktrace.Propagate(err, "failed to delete assignment with id: %s", assignment.ID).Error())
+			}
 		}
-		slog.Info(fmt.Sprintf("sent notifications for %d assignments due in one hour.", len(dueInOneHour)))
+		slog.Info(fmt.Sprintf("deleted %d assignments that are overdue.", len(toBeDeleted)))
 	}
 
 }
 
-func (handler *EventHandler) SendAssignmentNotification(span *sentry.Span, bot *discordgo.Session, assignment clients.Assignment, timeBuffer string) {
+func (handler *EventHandler) SendAssignmentNotification(span *sentry.Span, bot *discordgo.Session, assignment clients.Assignment, newStatus string) {
 	course, err := handler.HakaseClient.ReadCourse(span, assignment.CourseID)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to read course of assignment: %s", assignment.ID).Error())
@@ -91,16 +123,18 @@ func (handler *EventHandler) SendAssignmentNotification(span *sentry.Span, bot *
 		notifyChannel = guild.SystemChannelID
 	}
 
-	_, err = bot.ChannelMessageSendEmbed(notifyChannel, views.NotificationView(assignment, timeBuffer))
+	_, err = bot.ChannelMessageSendEmbed(notifyChannel, views.NotificationView(assignment, newStatus))
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to send due date notification for assignment: %s", assignment.ID).Error())
 	}
 }
 
-func (handler *EventHandler) UpdateAssignmentStatus(span *sentry.Span, assignment clients.Assignment, assignmentStatus string) {
-	assignment.Status = assignmentStatus
+func (handler *EventHandler) UpdateAssignmentStatus(span *sentry.Span, assignment clients.Assignment, newStatus string) {
+	assignment.Assignment = assignment.ID
+	assignment.Status = newStatus
 	err := handler.HakaseClient.UpdateAssignment(span, assignment)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to update assignment status: %s", assignment.ID).Error())
 	}
+
 }

@@ -51,12 +51,11 @@ func AssignmentModal(assignment *clients.Assignment) []discordgo.MessageComponen
 
 	newAssignment := assignment == nil
 
-	now := time.Now()
 	if newAssignment {
 		assignment = &clients.Assignment{
 			// placeholder data
 			Name: "Assignment 1",
-			Due:  &now,
+			Due:  time.Now(),
 			URL:  "https://canvas.instructure.com",
 		}
 	}

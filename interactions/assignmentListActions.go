@@ -75,7 +75,7 @@ func (handler *InteractionHandler) AddAssignmentSubmit(bot *discordgo.Session, i
 
 	assignment := clients.Assignment{
 		Name:     assignmentData.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value,
-		Due:      &due,
+		Due:      due,
 		CourseID: interactionCreate.GuildID,
 	}
 

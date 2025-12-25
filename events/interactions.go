@@ -2,11 +2,11 @@
 package events
 
 import (
-	"fmt"
 	"log/slog"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/palantir/stacktrace"
 )
 
 // InteractionCreate dispatches Discord interactions to the appropriate handler based on type and command.
@@ -20,7 +20,7 @@ func (handler *EventHandler) InteractionCreate(bot *discordgo.Session, interacti
 		case "hakase":
 			interaction.SlashHakase(bot, interactionCreate)
 		default:
-			slog.Error(fmt.Sprintf("unknown command: %s", interactionCreate.ApplicationCommandData().Name))
+			slog.Error(stacktrace.NewError("unknown command: %s", interactionCreate.ApplicationCommandData().Name).Error())
 		}
 	case discordgo.InteractionMessageComponent:
 		customID := interactionCreate.MessageComponentData().CustomID
@@ -35,7 +35,7 @@ func (handler *EventHandler) InteractionCreate(bot *discordgo.Session, interacti
 		} else if strings.HasPrefix(customID, "updateNotifyRole") {
 			interaction.UpdateNotifyRole(bot, interactionCreate)
 		} else {
-			slog.Error(fmt.Sprintf("unknown message component action: %s", customID))
+			slog.Error(stacktrace.NewError("unknown message component action: %s", customID).Error())
 		}
 	case discordgo.InteractionModalSubmit:
 		customID := interactionCreate.ModalSubmitData().CustomID
@@ -44,10 +44,10 @@ func (handler *EventHandler) InteractionCreate(bot *discordgo.Session, interacti
 		} else if strings.HasPrefix(customID, "updateAssignment") {
 			interaction.UpdateAssignmentSubmit(bot, interactionCreate)
 		} else {
-			slog.Error(fmt.Sprintf("unknown modal submit: %s", interactionCreate.ModalSubmitData().CustomID))
+			slog.Error(stacktrace.NewError("unknown modal submit: %s", interactionCreate.ModalSubmitData().CustomID).Error())
 		}
 	default:
-		slog.Error(fmt.Sprintf("unknown interaction type: %d", interactionCreate.Type))
+		slog.Error(stacktrace.NewError("unknown interaction type: %d", interactionCreate.Type).Error())
 
 	}
 }

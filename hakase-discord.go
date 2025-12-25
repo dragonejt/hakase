@@ -37,7 +37,7 @@ func main() {
 			Environment:      settings.ENV,
 		})
 		if err != nil {
-			slog.Warn(fmt.Sprintf("error initiating sentry: %s", err))
+			slog.Warn(stacktrace.Propagate(err, "failed to initiate sentry").Error())
 		}
 		slog.SetDefault(slog.New(slog.NewJSONHandler(io.MultiWriter(os.Stdout, sentry.NewLogger(context.Background())), &slog.HandlerOptions{AddSource: true})))
 	}
@@ -54,7 +54,6 @@ func main() {
 		slog.Error(stacktrace.Propagate(err, "failed to open discord session").Error())
 		return
 	}
-	defer bot.Close()
 
 	hakaseClient := &clients.BackendClient{
 		URL:        settings.BACKEND_URL,
@@ -83,7 +82,12 @@ func main() {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
-	go event.RegisterNotificationHandler(bot, shutdown)
+	go event.RegisterAssignmentHandler(bot, shutdown)
 
 	<-shutdown
+
+	err = bot.Close()
+	if err != nil {
+		slog.Error(stacktrace.Propagate(err, "failed to close discord bot").Error())
+	}
 }

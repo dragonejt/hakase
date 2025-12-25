@@ -48,7 +48,7 @@ func (testSuite *AssignmentListViewTestSuite) TestAssignmentsListViewSingle() {
 		{
 			ID:   "test-id-1",
 			Name: "Test Assignment 1",
-			Due:  &testTime,
+			Due:  testTime,
 			URL:  "https://example.com/1",
 		},
 	}
@@ -66,19 +66,17 @@ func (testSuite *AssignmentListViewTestSuite) TestAssignmentsListViewSingle() {
 
 // Test AssignmentsListView with multiple assignments
 func (testSuite *AssignmentListViewTestSuite) TestAssignmentsListViewMultiple() {
-	testTime1 := time.Now()
-	testTime2 := testTime1.Add(24 * time.Hour)
 	multipleAssignments := []clients.Assignment{
 		{
 			ID:   "test-id-1",
 			Name: "Test Assignment 1",
-			Due:  &testTime1,
+			Due:  time.Now(),
 			URL:  "https://example.com/1",
 		},
 		{
 			ID:   "test-id-2",
 			Name: "Test Assignment 2",
-			Due:  &testTime2,
+			Due:  time.Now().Add(24 * time.Hour),
 			URL:  "https://example.com/2",
 		},
 	}

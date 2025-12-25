@@ -94,7 +94,7 @@ func (handler *InteractionHandler) UpdateAssignmentSubmit(bot *discordgo.Session
 			}
 			return
 		}
-		assignment.Due = &due
+		assignment.Due = due
 	}
 
 	if assignmentData.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value != "" {
@@ -108,7 +108,7 @@ func (handler *InteractionHandler) UpdateAssignmentSubmit(bot *discordgo.Session
 	currentAssignment, err := handler.HakaseClient.ReadAssignment(transaction, assignmentID)
 	if assignment.Due.Equal(time.Time{}) {
 		assignment.Due = currentAssignment.Due
-	} else if err == nil && assignment.Due.Before(*currentAssignment.Due) {
+	} else if err == nil && assignment.Due.Before(currentAssignment.Due) {
 		_, err := bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
 			Content: "new due date before original assignment due date! hakase does not support this.",
 		})
