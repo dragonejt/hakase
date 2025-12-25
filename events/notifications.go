@@ -23,7 +23,7 @@ func (handler *EventHandler) RegisterAssignmentHandler(bot *discordgo.Session, s
 	}
 
 	task := gocron.NewTask(handler.ProcessAssignments, bot)
-	_, err = scheduler.NewJob(gocron.DurationJob(time.Second*5), task)
+	_, err = scheduler.NewJob(gocron.DurationJob(time.Minute), task)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to schedule new job").Error())
 	}
