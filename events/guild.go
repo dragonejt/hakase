@@ -14,7 +14,7 @@ import (
 
 // GuildCreate handles the event when the bot is added to a guild and creates a course.
 func (handler *EventHandler) GuildCreate(bot *discordgo.Session, guildCreate *discordgo.GuildCreate) {
-	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "guildCreate")
+	transaction := sentry.StartTransaction(context.Background(), "guildCreate")
 	defer transaction.Finish()
 	slog.Info(fmt.Sprintf("added to guild: %s (%s)", guildCreate.Name, guildCreate.ID))
 
@@ -34,7 +34,7 @@ func (handler *EventHandler) GuildCreate(bot *discordgo.Session, guildCreate *di
 
 // GuildDelete handles the event when the bot is removed from a guild and deletes the course.
 func (handler *EventHandler) GuildDelete(bot *discordgo.Session, guildDelete *discordgo.GuildDelete) {
-	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "guildDelete")
+	transaction := sentry.StartTransaction(context.Background(), "guildDelete")
 	defer transaction.Finish()
 	slog.Info(fmt.Sprintf("removed from guild: %s (%s)", guildDelete.Name, guildDelete.ID))
 

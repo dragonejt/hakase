@@ -16,6 +16,7 @@ type HakaseClient interface {
 	// Assignment APIs
 	ReadAssignment(span *sentry.Span, assignmentID string) (Assignment, error)
 	ListAssignments(span *sentry.Span, courseID string) ([]Assignment, error)
+	SearchAssignments(span *sentry.Span, searchQuery SearchAssignmentsQuery) ([]Assignment, error)
 	CreateAssignment(span *sentry.Span, assignment Assignment) (string, error)
 	UpdateAssignment(span *sentry.Span, assignment Assignment) error
 	DeleteAssignment(span *sentry.Span, assignmentID string) error
@@ -66,5 +67,3 @@ type ResponseEdit struct {
 	PrimaryKey string `json:"primaryKey,omitempty"`
 	ObjectType string `json:"objectType,omitempty"`
 }
-
-type DiscordSession struct{}

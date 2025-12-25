@@ -17,7 +17,7 @@ import (
 
 // AddAssignment opens a modal for adding a new assignment via Discord interaction.
 func (handler *InteractionHandler) AddAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "addAssignmentAction")
+	transaction := sentry.StartTransaction(context.Background(), "addAssignmentAction")
 	defer transaction.Finish()
 	slog.Debug(fmt.Sprintf("addAssignment executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
@@ -51,7 +51,7 @@ func (handler *InteractionHandler) AddAssignment(bot *discordgo.Session, interac
 // AddAssignmentSubmit handles the submission of the add assignment modal and creates the assignment.
 func (handler *InteractionHandler) AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	slog.Info(fmt.Sprintf("addAssignmentSubmit executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
-	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "addAssignmentSubmit")
+	transaction := sentry.StartTransaction(context.Background(), "addAssignmentSubmit")
 	defer transaction.Finish()
 
 	err := bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{

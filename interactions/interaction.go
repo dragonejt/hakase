@@ -22,4 +22,5 @@ type Interaction interface {
 type InteractionHandler struct {
 	Interaction
 	HakaseClient clients.HakaseClient
+	Bot          *discordgo.Session
 }

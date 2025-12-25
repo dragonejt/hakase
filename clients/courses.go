@@ -31,7 +31,7 @@ func (backend *BackendClient) ReadCourse(span *sentry.Span, guildID string) (Cou
 
 	course := Course{}
 
-	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/objects/Course/%s", backend.URL, guildID), nil)
+	request, err := http.NewRequestWithContext(span.Context(), http.MethodGet, fmt.Sprintf("%s/objects/Course/%s", backend.URL, guildID), nil)
 	if err != nil {
 		return course, stacktrace.Propagate(err, "failed to create API request")
 	}
@@ -79,7 +79,7 @@ func (backend *BackendClient) CreateCourse(span *sentry.Span, course Course) err
 		return stacktrace.Propagate(err, "failed to marshal course")
 	}
 
-	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/create-course/apply", backend.URL), bytes.NewReader(jsonBody))
+	request, err := http.NewRequestWithContext(span.Context(), http.MethodPost, fmt.Sprintf("%s/actions/create-course/apply", backend.URL), bytes.NewReader(jsonBody))
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to create API request")
 	}
@@ -132,7 +132,7 @@ func (backend *BackendClient) UpdateCourse(span *sentry.Span, course Course) err
 		return stacktrace.Propagate(err, "failed to marshal course")
 	}
 
-	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/edit-course/apply", backend.URL), bytes.NewReader(jsonBody))
+	request, err := http.NewRequestWithContext(span.Context(), http.MethodPost, fmt.Sprintf("%s/actions/edit-course/apply", backend.URL), bytes.NewReader(jsonBody))
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to create API request")
 	}
@@ -186,7 +186,7 @@ func (backend *BackendClient) DeleteCourse(span *sentry.Span, guildID string) er
 		return stacktrace.Propagate(err, "failed to marshal course")
 	}
 
-	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/actions/delete-course/apply", backend.URL), bytes.NewReader(jsonBody))
+	request, err := http.NewRequestWithContext(span.Context(), http.MethodPost, fmt.Sprintf("%s/actions/delete-course/apply", backend.URL), bytes.NewReader(jsonBody))
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to create API request")
 	}

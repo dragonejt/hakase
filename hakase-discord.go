@@ -9,6 +9,8 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/dragonejt/hakase-discord/clients"
@@ -52,13 +54,14 @@ func main() {
 		slog.Error(stacktrace.Propagate(err, "failed to open discord session").Error())
 		return
 	}
+	defer bot.Close()
 
 	hakaseClient := &clients.BackendClient{
 		URL:        settings.BACKEND_URL,
 		AuthToken:  settings.BACKEND_AUTH_TOKEN,
 		HTTPClient: bot.Client,
 	}
-	event := events.EventHandler{HakaseClient: hakaseClient, InteractionHandler: &interactions.InteractionHandler{HakaseClient: hakaseClient}}
+	event := events.EventHandler{HakaseClient: hakaseClient, InteractionHandler: &interactions.InteractionHandler{HakaseClient: hakaseClient, Bot: bot}}
 
 	slog.Info("registering event handlers")
 	bot.AddHandler(event.Ready)
@@ -77,5 +80,10 @@ func main() {
 		}
 	}
 
-	select {}
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+
+	go event.RegisterNotificationHandler(bot, shutdown)
+
+	<-shutdown
 }

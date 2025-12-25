@@ -10,7 +10,6 @@ import (
 
 	"github.com/araddon/dateparse"
 	"github.com/bwmarrin/discordgo"
-	"github.com/dragonejt/hakase-discord/clients"
 	"github.com/dragonejt/hakase-discord/views"
 	"github.com/getsentry/sentry-go"
 	"github.com/palantir/stacktrace"
@@ -18,7 +17,7 @@ import (
 
 // UpdateAssignment opens a modal for updating an assignment via Discord interaction.
 func (handler *InteractionHandler) UpdateAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "updateAssignmentAction")
+	transaction := sentry.StartTransaction(context.Background(), "updateAssignmentAction")
 	defer transaction.Finish()
 	slog.Debug(fmt.Sprintf("updateAssignment executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
@@ -67,7 +66,7 @@ func (handler *InteractionHandler) UpdateAssignment(bot *discordgo.Session, inte
 // UpdateAssignmentSubmit handles the submission of the update assignment modal and updates the assignment.
 func (handler *InteractionHandler) UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	slog.Info(fmt.Sprintf("updateAssignmentSubmit executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
-	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "updateAssignmentSubmit")
+	transaction := sentry.StartTransaction(context.Background(), "updateAssignmentSubmit")
 	defer transaction.Finish()
 
 	err := bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
@@ -158,7 +157,7 @@ func (handler *InteractionHandler) UpdateAssignmentSubmit(bot *discordgo.Session
 // DeleteAssignment deletes an assignment based on user interaction.
 func (handler *InteractionHandler) DeleteAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	slog.Debug(fmt.Sprintf("deleteAssignment executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
-	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "deleteAssignmentAction")
+	transaction := sentry.StartTransaction(context.Background(), "deleteAssignmentAction")
 	defer transaction.Finish()
 
 	assignmentID := strings.Split(interactionCreate.MessageComponentData().CustomID, "_")[1]

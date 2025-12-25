@@ -7,7 +7,6 @@ import (
 	"log/slog"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/dragonejt/hakase-discord/clients"
 	"github.com/dragonejt/hakase-discord/views"
 	"github.com/getsentry/sentry-go"
 	"github.com/palantir/stacktrace"
@@ -15,7 +14,7 @@ import (
 
 // UpdateNotifyChannel updates the notifications channel for a course based on user interaction.
 func (handler *InteractionHandler) UpdateNotifyChannel(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "updateNotifyChannel")
+	transaction := sentry.StartTransaction(context.Background(), "updateNotifyChannel")
 	defer transaction.Finish()
 	slog.Debug(fmt.Sprintf("updateNotifyChannel executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
@@ -96,7 +95,7 @@ func (handler *InteractionHandler) UpdateNotifyChannel(bot *discordgo.Session, i
 
 // UpdateNotifyRole updates the notifications role for a course based on user interaction.
 func (handler *InteractionHandler) UpdateNotifyRole(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	transaction := sentry.StartTransaction(context.WithValue(context.Background(), clients.DiscordSession{}, bot), "updateNotifyRole")
+	transaction := sentry.StartTransaction(context.Background(), "updateNotifyRole")
 	defer transaction.Finish()
 	slog.Debug(fmt.Sprintf("updateNotifyRole executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
