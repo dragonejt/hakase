@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"time"
@@ -69,8 +70,8 @@ func (handler *EventHandler) ProcessAssignments(bot *discordgo.Session) {
 			slog.Error(stacktrace.Propagate(err, "failed to get assignments due in %s", newStatus).Error())
 		} else {
 			for _, assignment := range assignments {
-				go handler.SendAssignmentNotification(transaction, bot, assignment, newStatus)
-				go handler.UpdateAssignmentStatus(transaction, assignment, newStatus)
+				go handler.sendAssignmentNotification(transaction, bot, assignment, newStatus)
+				go handler.updateAssignmentStatus(transaction, assignment, newStatus)
 			}
 			slog.Info("sent notifications for assignments due in one day", "count", len(assignments))
 		}
@@ -105,30 +106,41 @@ func (handler *EventHandler) ProcessAssignments(bot *discordgo.Session) {
 
 }
 
-func (handler *EventHandler) SendAssignmentNotification(span *sentry.Span, bot *discordgo.Session, assignment clients.Assignment, newStatus string) {
+func (handler *EventHandler) sendAssignmentNotification(span *sentry.Span, bot *discordgo.Session, assignment clients.Assignment, newStatus string) {
 	course, err := handler.HakaseClient.ReadCourse(span, assignment.CourseID)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to read course of assignment: %s", assignment.ID).Error())
 		return
 	}
 
+	guild, err := bot.Guild(course.CourseID)
+	if err != nil {
+		slog.Error(stacktrace.Propagate(err, "failed to retrieve guild system channel for %s", course.CourseID).Error())
+		return
+	}
+
 	notifyChannel := course.NotifyChannel
 	if notifyChannel == "" {
-		guild, err := bot.Guild(course.CourseID)
-		if err != nil {
-			slog.Error(stacktrace.Propagate(err, "failed to retrieve guild system channel for %s", course.CourseID).Error())
-			return
-		}
 		notifyChannel = guild.SystemChannelID
 	}
 
-	_, err = bot.ChannelMessageSendEmbed(notifyChannel, views.NotificationView(assignment, newStatus))
+	notifyTarget := course.NotifyGroup
+	if notifyTarget == "" {
+		notifyTarget = fmt.Sprintf("<@%s>", guild.OwnerID)
+	} else {
+		notifyTarget = fmt.Sprintf("<@&%s>", notifyTarget)
+	}
+
+	_, err = bot.ChannelMessageSendComplex(notifyChannel, &discordgo.MessageSend{
+		Content: notifyTarget,
+		Embeds:  []*discordgo.MessageEmbed{views.NotificationView(assignment, newStatus)},
+	})
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to send due date notification for assignment: %s", assignment.ID).Error())
 	}
 }
 
-func (handler *EventHandler) UpdateAssignmentStatus(span *sentry.Span, assignment clients.Assignment, newStatus string) {
+func (handler *EventHandler) updateAssignmentStatus(span *sentry.Span, assignment clients.Assignment, newStatus string) {
 	assignment.Assignment = assignment.ID
 	assignment.Status = newStatus
 	err := handler.HakaseClient.UpdateAssignment(span, assignment)

@@ -3,7 +3,6 @@ package interactions
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/dragonejt/hakase-discord/clients"
-	"github.com/getsentry/sentry-go"
 )
 
 type Interaction interface {
@@ -15,7 +14,6 @@ type Interaction interface {
 	UpdateNotifyChannel(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
 	UpdateNotifyRole(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
 	SlashAssignments(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
-	listAssignments(span *sentry.Span, interactionCreate *discordgo.InteractionCreate)
 	SlashHakase(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
 }
 
