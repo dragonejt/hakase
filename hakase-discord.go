@@ -75,7 +75,7 @@ func main() {
 		if err != nil {
 			slog.Error(stacktrace.Propagate(err, "failed to register command: %s", cmd.Name).Error())
 		} else {
-			slog.Info(fmt.Sprintf("successfully registered command: %s", cmd.Name))
+			slog.Info("successfully registered command", "command_name", cmd.Name)
 		}
 	}
 

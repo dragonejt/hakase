@@ -16,7 +16,7 @@ import (
 func (handler *EventHandler) GuildCreate(bot *discordgo.Session, guildCreate *discordgo.GuildCreate) {
 	transaction := sentry.StartTransaction(context.Background(), "guildCreate")
 	defer transaction.Finish()
-	slog.Info(fmt.Sprintf("added to guild: %s (%s)", guildCreate.Name, guildCreate.ID))
+	slog.Info("added to guild", "guild_name", guildCreate.Name, "guild_id", guildCreate.ID)
 
 	course := clients.Course{
 		CourseID: guildCreate.ID,
@@ -36,7 +36,7 @@ func (handler *EventHandler) GuildCreate(bot *discordgo.Session, guildCreate *di
 func (handler *EventHandler) GuildDelete(bot *discordgo.Session, guildDelete *discordgo.GuildDelete) {
 	transaction := sentry.StartTransaction(context.Background(), "guildDelete")
 	defer transaction.Finish()
-	slog.Info(fmt.Sprintf("removed from guild: %s (%s)", guildDelete.Name, guildDelete.ID))
+	slog.Info("removed from guild", "guild_name", guildDelete.Name, "guild_id", guildDelete.ID)
 
 	err := handler.HakaseClient.DeleteCourse(transaction, guildDelete.ID)
 	if err != nil {

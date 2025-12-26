@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
 	"time"
@@ -73,7 +72,7 @@ func (handler *EventHandler) ProcessAssignments(bot *discordgo.Session) {
 				go handler.SendAssignmentNotification(transaction, bot, assignment, newStatus)
 				go handler.UpdateAssignmentStatus(transaction, assignment, newStatus)
 			}
-			slog.Info(fmt.Sprintf("sent notifications for %d assignments due in one day.", len(assignments)))
+			slog.Info("sent notifications for assignments due in one day", "count", len(assignments))
 		}
 	}
 
@@ -101,7 +100,7 @@ func (handler *EventHandler) ProcessAssignments(bot *discordgo.Session) {
 				slog.Error(stacktrace.Propagate(err, "failed to delete assignment with id: %s", assignment.ID).Error())
 			}
 		}
-		slog.Info(fmt.Sprintf("deleted %d assignments that are overdue.", len(toBeDeleted)))
+		slog.Info("deleted overdue assignments", "count", len(toBeDeleted))
 	}
 
 }

@@ -54,7 +54,7 @@ func (handler *InteractionHandler) SlashHakase(bot *discordgo.Session, interacti
 		optionMap[opt.Name] = opt
 	}
 
-	slog.Info(fmt.Sprintf("/hakase executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
+	slog.Info("/hakase executed", "username", interactionCreate.Member.User.Username, "user_id", interactionCreate.Member.User.ID, "guild_id", interactionCreate.GuildID)
 	transaction := sentry.StartTransaction(context.Background(), "/hakase")
 	defer transaction.Finish()
 

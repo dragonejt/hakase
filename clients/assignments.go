@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -156,7 +155,6 @@ func (backend *BackendClient) SearchAssignments(span *sentry.Span, searchQuery S
 	if err != nil {
 		return searchAssignmentsResponse.Data, stacktrace.Propagate(err, "failed reading API response body: %d", response.StatusCode)
 	}
-	slog.Info(string(body))
 
 	err = json.Unmarshal(body, &searchAssignmentsResponse)
 	if err != nil {

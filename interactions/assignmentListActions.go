@@ -19,7 +19,7 @@ import (
 func (handler *InteractionHandler) AddAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	transaction := sentry.StartTransaction(context.Background(), "addAssignmentAction")
 	defer transaction.Finish()
-	slog.Debug(fmt.Sprintf("addAssignment executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
+	slog.Debug("addAssignment executed", "username", interactionCreate.Member.User.Username, "user_id", interactionCreate.Member.User.ID, "guild_id", interactionCreate.GuildID)
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
 		err := bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -50,7 +50,7 @@ func (handler *InteractionHandler) AddAssignment(bot *discordgo.Session, interac
 
 // AddAssignmentSubmit handles the submission of the add assignment modal and creates the assignment.
 func (handler *InteractionHandler) AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	slog.Info(fmt.Sprintf("addAssignmentSubmit executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
+	slog.Info("addAssignmentSubmit executed", "username", interactionCreate.Member.User.Username, "user_id", interactionCreate.Member.User.ID, "guild_id", interactionCreate.GuildID)
 	transaction := sentry.StartTransaction(context.Background(), "addAssignmentSubmit")
 	defer transaction.Finish()
 

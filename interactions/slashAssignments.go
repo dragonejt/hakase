@@ -3,7 +3,6 @@ package interactions
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/bwmarrin/discordgo"
@@ -33,7 +32,7 @@ func (handler *InteractionHandler) SlashAssignments(bot *discordgo.Session, inte
 		optionMap[opt.Name] = opt
 	}
 
-	slog.Info(fmt.Sprintf("/assignments executed by %s (%s) in %s", interactionCreate.Member.User.Username, interactionCreate.Member.User.ID, interactionCreate.GuildID))
+	slog.Info("/assignments executed", "username", interactionCreate.Member.User.Username, "user_id", interactionCreate.Member.User.ID, "guild_id", interactionCreate.GuildID)
 	transaction := sentry.StartTransaction(context.Background(), "/assignments")
 	defer transaction.Finish()
 
