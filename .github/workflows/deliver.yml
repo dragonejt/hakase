@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Login to GitHub Container Registry
+      - name: Login to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.REGISTRY }}
@@ -35,8 +35,8 @@ jobs:
             pack build ${{ env.IMAGE_NAME }} \
               --path . \
               --builder gcr.io/buildpacks/builder:google-24 \
-              --tag ${{ env.IMAGE_NAME }}:${{ env.GIT_REV }}
-            docker push --platform=linux/amd64 ${{ env.IMAGE_NAME }}-${{ env.GIT_REV }}:latest
+              --tag ${{ env.IMAGE_NAME }}-${{ env.GIT_REV }}:latest
+            docker push ${{ env.IMAGE_NAME }}-${{ env.GIT_REV }}:latest
 
       - name: Create Sentry Release
         uses: getsentry/action-release@v3
