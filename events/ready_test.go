@@ -49,5 +49,5 @@ func (testSuite *ReadyTestSuite) TestReadyEventBasic() {
 	testSuite.event.Ready(testSuite.bot, testSuite.ready)
 
 	logOutput := testSuite.logBuffer.String()
-	testSuite.Contains(logOutput, "logged in as TestBot")
+	testSuite.Contains(logOutput, "user=TestBot")
 }
