@@ -34,7 +34,7 @@ jobs:
         run: |
             pack build ${{ env.IMAGE_NAME }} \
               --path . \
-              --builder paketobuildpacks/ubuntu-noble-build:latest \
+              --builder gcr.io/buildpacks/builder:google-24 \
               --tag ${{ env.IMAGE_NAME }}:${{ env.GIT_REV }}
             docker push --platform=linux/amd64 ${{ env.IMAGE_NAME }}-${{ env.GIT_REV }}:latest
 
