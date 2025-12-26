@@ -34,7 +34,7 @@ jobs:
         run: |
             pack build ${{ env.IMAGE_NAME }} \
               --path . \
-              --builder bellsoft/buildpacks.builder:latest \
+              --builder bellsoft/buildpacks.builder:glibc \
               --tag ${{ env.IMAGE_NAME }}:${{ env.GIT_REV }}
             docker push --platform=linux/amd64 ${{ env.IMAGE_NAME }}-${{ env.GIT_REV }}:latest
 
