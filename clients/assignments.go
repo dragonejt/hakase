@@ -64,6 +64,7 @@ func (backend *BackendClient) ReadAssignment(span *sentry.Span, assignmentID str
 	if err != nil {
 		return assignment, stacktrace.Propagate(err, "failed to execute API request")
 	}
+	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		return assignment, stacktrace.NewError("failed status code API response: %d", response.StatusCode)
 	}
@@ -101,6 +102,7 @@ func (backend *BackendClient) ListAssignments(span *sentry.Span, guildID string)
 	if err != nil {
 		return listAssignmentsResponse.Data, stacktrace.Propagate(err, "failed to execute API request")
 	}
+	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		return listAssignmentsResponse.Data, stacktrace.NewError("failed status code API response: %d", response.StatusCode)
 	}
@@ -147,6 +149,7 @@ func (backend *BackendClient) SearchAssignments(span *sentry.Span, searchQuery S
 	if err != nil {
 		return searchAssignmentsResponse.Data, stacktrace.Propagate(err, "failed to execute API request")
 	}
+	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		return searchAssignmentsResponse.Data, stacktrace.NewError("failed status code API response: %d", response.StatusCode)
 	}
@@ -197,6 +200,7 @@ func (backend *BackendClient) CreateAssignment(span *sentry.Span, assignment Ass
 	if err != nil {
 		return "", stacktrace.Propagate(err, "failed to execute API request")
 	}
+	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		return "", stacktrace.NewError("failed status code API response: %d", response.StatusCode)
 	}
@@ -250,6 +254,7 @@ func (backend *BackendClient) UpdateAssignment(span *sentry.Span, assignment Ass
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to execute API request")
 	}
+	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		return stacktrace.NewError("failed status code API response: %d", response.StatusCode)
 	}
@@ -304,6 +309,7 @@ func (backend *BackendClient) DeleteAssignment(span *sentry.Span, assignmentID s
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to execute API request")
 	}
+	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		return stacktrace.NewError("failed status code API response: %d", response.StatusCode)
 	}

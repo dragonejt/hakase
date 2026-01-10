@@ -49,18 +49,21 @@ func main() {
 	}
 	bot.StateEnabled = true
 
-	err = bot.Open()
-	if err != nil {
-		slog.Error(stacktrace.Propagate(err, "failed to open discord session").Error())
-		return
-	}
-
 	hakaseClient := &clients.BackendClient{
 		URL:        settings.BACKEND_URL,
 		AuthToken:  settings.BACKEND_AUTH_TOKEN,
 		HTTPClient: bot.Client,
 	}
 	event := events.EventHandler{HakaseClient: hakaseClient, InteractionHandler: &interactions.InteractionHandler{HakaseClient: hakaseClient, Bot: bot}}
+
+	err = bot.Open()
+	if err != nil {
+		slog.Error(stacktrace.Propagate(err, "failed to open discord session").Error())
+		return
+	}
+	defer bot.Close()
+
+	bot.StateEnabled = true
 
 	slog.Info("registering event handlers")
 	bot.AddHandler(event.Ready)
@@ -85,9 +88,4 @@ func main() {
 	go event.RegisterAssignmentHandler(bot, shutdown)
 
 	<-shutdown
-
-	err = bot.Close()
-	if err != nil {
-		slog.Error(stacktrace.Propagate(err, "failed to close discord bot").Error())
-	}
 }
