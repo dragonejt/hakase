@@ -61,7 +61,7 @@ func main() {
 		slog.Error(stacktrace.Propagate(err, "failed to open discord session").Error())
 		return
 	}
-	defer bot.Close()
+	defer bot.Close() //nolint:errcheck
 
 	bot.StateEnabled = true
 

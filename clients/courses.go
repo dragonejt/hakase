@@ -44,7 +44,7 @@ func (backend *BackendClient) ReadCourse(span *sentry.Span, guildID string) (Cou
 	if err != nil {
 		return course, stacktrace.Propagate(err, "failed to execute API request")
 	}
-	defer response.Body.Close()
+	defer response.Body.Close() //nolint:errcheck
 	if response.StatusCode != http.StatusOK {
 		return course, stacktrace.NewError("failed status code API response: %d", response.StatusCode)
 	}
@@ -94,7 +94,7 @@ func (backend *BackendClient) CreateCourse(span *sentry.Span, course Course) err
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to execute API request")
 	}
-	defer response.Body.Close()
+	defer response.Body.Close() //nolint:errcheck
 	if response.StatusCode != http.StatusOK {
 		return stacktrace.NewError("failed status code API response: %d", response.StatusCode)
 	}
@@ -148,7 +148,7 @@ func (backend *BackendClient) UpdateCourse(span *sentry.Span, course Course) err
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to execute API request")
 	}
-	defer response.Body.Close()
+	defer response.Body.Close() //nolint:errcheck
 	if response.StatusCode != http.StatusOK {
 		return stacktrace.NewError("failed status code API response: %d", response.StatusCode)
 	}
@@ -203,7 +203,7 @@ func (backend *BackendClient) DeleteCourse(span *sentry.Span, guildID string) er
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to execute API request")
 	}
-	defer response.Body.Close()
+	defer response.Body.Close() //nolint:errcheck
 	if response.StatusCode != http.StatusOK {
 		return stacktrace.NewError("failed status code API response: %d", response.StatusCode)
 	}
