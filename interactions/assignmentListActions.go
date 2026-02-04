@@ -117,17 +117,17 @@ func (handler *InteractionHandler) AddAssignmentSubmit(bot *discordgo.Session, i
 		return
 	}
 
-	startTime := assignment.Due.Add(-1 * time.Hour)
+	startTime := createdAssignment.Due.Add(-1 * time.Hour)
 	//nolint:errcheck
-	go bot.GuildScheduledEventCreate(assignment.CourseID, &discordgo.GuildScheduledEventParams{
-		Name:               assignment.Name,
-		Description:        assignment.ID,
+	go bot.GuildScheduledEventCreate(createdAssignment.CourseID, &discordgo.GuildScheduledEventParams{
+		Name:               createdAssignment.Name,
+		Description:        createdAssignment.ID,
 		ScheduledStartTime: &startTime,
-		ScheduledEndTime:   &assignment.Due,
+		ScheduledEndTime:   &createdAssignment.Due,
 		PrivacyLevel:       discordgo.GuildScheduledEventPrivacyLevelGuildOnly,
 		EntityType:         discordgo.GuildScheduledEventEntityTypeExternal,
 		EntityMetadata: &discordgo.GuildScheduledEventEntityMetadata{
-			Location: assignment.URL,
+			Location: createdAssignment.URL,
 		},
 	})
 

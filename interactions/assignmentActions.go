@@ -200,7 +200,7 @@ func (handler *InteractionHandler) DeleteAssignment(bot *discordgo.Session, inte
 		return
 	}
 
-	events, err := bot.GuildScheduledEvents(assignmentID, false)
+	events, err := bot.GuildScheduledEvents(interactionCreate.GuildID, false)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "error getting guild events").Error())
 	}
