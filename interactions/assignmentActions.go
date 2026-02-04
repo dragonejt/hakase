@@ -50,6 +50,7 @@ func (handler *InteractionHandler) UpdateAssignment(bot *discordgo.Session, inte
 		}
 		return
 	}
+
 	err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseModal,
 		Data: &discordgo.InteractionResponseData{
@@ -144,6 +145,27 @@ func (handler *InteractionHandler) UpdateAssignmentSubmit(bot *discordgo.Session
 		return
 	}
 
+	events, err := bot.GuildScheduledEvents(updatedAssignment.CourseID, false)
+	if err != nil {
+		slog.Error(stacktrace.Propagate(err, "error getting guild events").Error())
+	}
+	for _, event := range events {
+		if event.Description == updatedAssignment.ID {
+			startTime := updatedAssignment.Due.Add(-1 * time.Hour)
+			go bot.GuildScheduledEventEdit(updatedAssignment.CourseID, event.ID, &discordgo.GuildScheduledEventParams{
+				Name:               updatedAssignment.Name,
+				Description:        updatedAssignment.ID,
+				ScheduledStartTime: &startTime,
+				ScheduledEndTime:   &updatedAssignment.Due,
+				PrivacyLevel:       discordgo.GuildScheduledEventPrivacyLevelGuildOnly,
+				EntityType:         discordgo.GuildScheduledEventEntityTypeExternal,
+				EntityMetadata: &discordgo.GuildScheduledEventEntityMetadata{
+					Location: updatedAssignment.URL,
+				},
+			}) //nolint:errcheck
+		}
+	}
+
 	_, err = bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
 		Content:    "assignment updated!",
 		Embeds:     []*discordgo.MessageEmbed{views.AssignmentView(interactionCreate.Member, updatedAssignment)},
@@ -175,6 +197,16 @@ func (handler *InteractionHandler) DeleteAssignment(bot *discordgo.Session, inte
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
 		return
+	}
+
+	events, err := bot.GuildScheduledEvents(assignmentID, false)
+	if err != nil {
+		slog.Error(stacktrace.Propagate(err, "error getting guild events").Error())
+	}
+	for _, event := range events {
+		if event.Description == assignmentID {
+			go bot.GuildScheduledEventDelete(interactionCreate.GuildID, event.ID) //nolint:errcheck
+		}
 	}
 
 	err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
