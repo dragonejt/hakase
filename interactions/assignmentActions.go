@@ -152,6 +152,7 @@ func (handler *InteractionHandler) UpdateAssignmentSubmit(bot *discordgo.Session
 	for _, event := range events {
 		if event.Description == updatedAssignment.ID {
 			startTime := updatedAssignment.Due.Add(-1 * time.Hour)
+			//nolint:errcheck
 			go bot.GuildScheduledEventEdit(updatedAssignment.CourseID, event.ID, &discordgo.GuildScheduledEventParams{
 				Name:               updatedAssignment.Name,
 				Description:        updatedAssignment.ID,
@@ -162,7 +163,7 @@ func (handler *InteractionHandler) UpdateAssignmentSubmit(bot *discordgo.Session
 				EntityMetadata: &discordgo.GuildScheduledEventEntityMetadata{
 					Location: updatedAssignment.URL,
 				},
-			}) //nolint:errcheck
+			})
 		}
 	}
 
@@ -205,7 +206,8 @@ func (handler *InteractionHandler) DeleteAssignment(bot *discordgo.Session, inte
 	}
 	for _, event := range events {
 		if event.Description == assignmentID {
-			go bot.GuildScheduledEventDelete(interactionCreate.GuildID, event.ID) //nolint:errcheck
+			//nolint:errcheck
+			go bot.GuildScheduledEventDelete(interactionCreate.GuildID, event.ID)
 		}
 	}
 

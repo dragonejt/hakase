@@ -118,6 +118,7 @@ func (handler *InteractionHandler) AddAssignmentSubmit(bot *discordgo.Session, i
 	}
 
 	startTime := assignment.Due.Add(-1 * time.Hour)
+	//nolint:errcheck
 	go bot.GuildScheduledEventCreate(assignment.CourseID, &discordgo.GuildScheduledEventParams{
 		Name:               assignment.Name,
 		Description:        assignment.ID,
@@ -128,7 +129,7 @@ func (handler *InteractionHandler) AddAssignmentSubmit(bot *discordgo.Session, i
 		EntityMetadata: &discordgo.GuildScheduledEventEntityMetadata{
 			Location: assignment.URL,
 		},
-	}) //nolint:errcheck
+	})
 
 	_, err = bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
 		Content:    "assignment created!",
