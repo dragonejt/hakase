@@ -117,6 +117,20 @@ func (handler *InteractionHandler) AddAssignmentSubmit(bot *discordgo.Session, i
 		return
 	}
 
+	startTime := createdAssignment.Due.Add(-1 * time.Hour)
+	//nolint:errcheck
+	go bot.GuildScheduledEventCreate(createdAssignment.CourseID, &discordgo.GuildScheduledEventParams{
+		Name:               createdAssignment.Name,
+		Description:        createdAssignment.ID,
+		ScheduledStartTime: &startTime,
+		ScheduledEndTime:   &createdAssignment.Due,
+		PrivacyLevel:       discordgo.GuildScheduledEventPrivacyLevelGuildOnly,
+		EntityType:         discordgo.GuildScheduledEventEntityTypeExternal,
+		EntityMetadata: &discordgo.GuildScheduledEventEntityMetadata{
+			Location: createdAssignment.URL,
+		},
+	})
+
 	_, err = bot.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
 		Content:    "assignment created!",
 		Embeds:     []*discordgo.MessageEmbed{views.AssignmentView(interactionCreate.Member, createdAssignment)},
