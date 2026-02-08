@@ -36,7 +36,7 @@ jobs:
               --path . \
               --builder gcr.io/buildpacks/builder:google-24 \
               --tag ${{ env.IMAGE_NAME }}-${{ env.GIT_REV }}:${{ env.GIT_REV }}
-            docker push ${{ env.IMAGE_NAME }}-${{ env.GIT_REV }}:${{ env.GIT_REV }}
+            docker push ${{ env.IMAGE_NAME }}:${{ env.GIT_REV }}
 
       - name: Create Sentry Release
         uses: getsentry/action-release@v3
