@@ -17,3 +17,10 @@ type EventHandler struct {
 	HakaseClient       clients.HakaseClient
 	InteractionHandler interactions.Interaction
 }
+
+func NewEventHandler(hakaseClient clients.HakaseClient) *EventHandler {
+	return &EventHandler{
+		HakaseClient:       hakaseClient,
+		InteractionHandler: &interactions.InteractionHandler{HakaseClient: hakaseClient},
+	}
+}

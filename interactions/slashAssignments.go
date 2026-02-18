@@ -38,22 +38,22 @@ func (handler *InteractionHandler) SlashAssignments(bot *discordgo.Session, inte
 
 	assignmentID, exists := optionMap["id"]
 	if exists {
-		handler.getAssignment(transaction, interactionCreate, assignmentID.StringValue())
+		handler.getAssignment(transaction, bot, interactionCreate, assignmentID.StringValue())
 	} else {
-		handler.listAssignments(transaction, interactionCreate)
+		handler.listAssignments(transaction, bot, interactionCreate)
 	}
 
 }
 
 // getAssignment retrieves and responds with a specific assignment's details.
-func (handler *InteractionHandler) getAssignment(span *sentry.Span, interactionCreate *discordgo.InteractionCreate, assignmentID string) {
+func (handler *InteractionHandler) getAssignment(span *sentry.Span, bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate, assignmentID string) {
 	span = span.StartChild("/assignments getAssignment")
 	defer span.Finish()
 
 	assignment, err := handler.HakaseClient.ReadAssignment(span, assignmentID)
 
 	if err != nil {
-		err = handler.Bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: err.Error(),
@@ -63,7 +63,7 @@ func (handler *InteractionHandler) getAssignment(span *sentry.Span, interactionC
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
 	} else {
-		err = handler.Bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Embeds:     []*discordgo.MessageEmbed{views.AssignmentView(interactionCreate.Member, assignment)},
@@ -77,13 +77,13 @@ func (handler *InteractionHandler) getAssignment(span *sentry.Span, interactionC
 }
 
 // listAssignments retrieves and responds with a list of assignments for the guild.
-func (handler *InteractionHandler) listAssignments(span *sentry.Span, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) listAssignments(span *sentry.Span, bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	span = span.StartChild("/assignments listAssignments")
 	defer span.Finish()
 
 	assignments, err := handler.HakaseClient.ListAssignments(span, interactionCreate.GuildID)
 	if err != nil {
-		err = handler.Bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: err.Error(),
@@ -93,7 +93,7 @@ func (handler *InteractionHandler) listAssignments(span *sentry.Span, interactio
 			slog.Error(stacktrace.Propagate(err, "error responding to interaction").Error())
 		}
 	} else {
-		err = handler.Bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Embeds:     []*discordgo.MessageEmbed{views.AssignmentsListView(interactionCreate.Member, assignments)},

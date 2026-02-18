@@ -60,19 +60,19 @@ func (handler *InteractionHandler) SlashHakase(bot *discordgo.Session, interacti
 
 	subcommand, exists := optionMap["cmd"]
 	if !exists {
-		handler.ping(transaction, interactionCreate)
+		handler.ping(transaction, bot, interactionCreate)
 	} else {
 		switch subcommand.StringValue() {
 		case "rock-paper-scissors":
-			handler.rockPaperScissors(transaction, interactionCreate)
+			handler.rockPaperScissors(transaction, bot, interactionCreate)
 		case "config":
-			handler.config(transaction, interactionCreate)
+			handler.config(transaction, bot, interactionCreate)
 		}
 	}
 }
 
 // ping responds to the /hakase command with a pong and backend response time.
-func (handler *InteractionHandler) ping(span *sentry.Span, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) ping(span *sentry.Span, bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	span = span.StartChild("/hakase ping")
 	defer span.Finish()
 
@@ -82,7 +82,7 @@ func (handler *InteractionHandler) ping(span *sentry.Span, interactionCreate *di
 		slog.Error(stacktrace.Propagate(err, "error pinging backend").Error())
 	}
 
-	err = handler.Bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+	err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: fmt.Sprintf("hakase pong! response time: %dms", time.Since(start).Milliseconds()),
@@ -95,11 +95,11 @@ func (handler *InteractionHandler) ping(span *sentry.Span, interactionCreate *di
 }
 
 // rockPaperScissors responds with a random rock-paper-scissors GIF.
-func (handler *InteractionHandler) rockPaperScissors(span *sentry.Span, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) rockPaperScissors(span *sentry.Span, bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	span = span.StartChild("/hakase rockPaperScissors")
 	defer span.Finish()
 
-	err := handler.Bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+	err := bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: rockPaperScissorsGIFS[rand.Intn(len(rockPaperScissorsGIFS))],
@@ -111,14 +111,14 @@ func (handler *InteractionHandler) rockPaperScissors(span *sentry.Span, interact
 }
 
 // config responds with the course configuration embed and components.
-func (handler *InteractionHandler) config(span *sentry.Span, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) config(span *sentry.Span, bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	span = span.StartChild("/hakase config")
 	defer span.Finish()
 
 	course, err := handler.HakaseClient.ReadCourse(span, interactionCreate.GuildID)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "error reading course").Error())
-		err = handler.Bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: fmt.Sprintf("error reading course: %s", err.Error()),
@@ -130,7 +130,7 @@ func (handler *InteractionHandler) config(span *sentry.Span, interactionCreate *
 		return
 	}
 
-	err = handler.Bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+	err = bot.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Embeds:     []*discordgo.MessageEmbed{views.ConfigView(course)},
