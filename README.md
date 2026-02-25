@@ -17,9 +17,11 @@ You do have to have some environment variables in place. hakase does not directl
 ```sh
 ENV="development"
 DISCORD_BOT_TOKEN="from Discord Dev Portal"
-CF_ACCOUNT_ID="from Cloudflare"
-CF_API_TOKEN="from Cloudflare User Tokens"
-D1_DATABASE_ID="from Cloudflare D1"
+BACKEND_URL="from Backend API"
+BACKEND_AUTH_TOKEN="from Backend API"
+ANTHROPIC_BASE_URL="from Anthropic-compatible LLM API"
+ANTHROPIC_AUTH_TOKEN="from Anthropic-compatible LLM API"
+ANTHROPIC_MODEL="from Anthropic-compatible LLM API"
 ```
 
 ### Testing
