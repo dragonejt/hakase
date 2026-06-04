@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: hakase
+
+discord:
+  token: ${DISCORD_BOT_TOKEN}
