@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/dragonejt/hakase-discord/clients"
 	"github.com/dragonejt/hakase-discord/views"
 	"github.com/getsentry/sentry-go"
 	"github.com/palantir/stacktrace"
@@ -26,7 +27,7 @@ var AssignmentsCommand = discordgo.ApplicationCommand{
 
 // SlashAssignments handles the /assignments slash command interaction.
 // It retrieves a specific assignment or lists all assignments for the guild.
-func (handler *InteractionHandler) SlashAssignments(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) SlashAssignments(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(interactionCreate.ApplicationCommandData().Options))
 	for _, opt := range interactionCreate.ApplicationCommandData().Options {
 		optionMap[opt.Name] = opt
@@ -46,7 +47,7 @@ func (handler *InteractionHandler) SlashAssignments(bot *discordgo.Session, inte
 }
 
 // getAssignment retrieves and responds with a specific assignment's details.
-func (handler *InteractionHandler) getAssignment(span *sentry.Span, bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate, assignmentID string) {
+func (handler *InteractionHandler) getAssignment(span *sentry.Span, bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate, assignmentID string) {
 	span = span.StartChild("/assignments getAssignment")
 	defer span.Finish()
 
@@ -77,7 +78,7 @@ func (handler *InteractionHandler) getAssignment(span *sentry.Span, bot *discord
 }
 
 // listAssignments retrieves and responds with a list of assignments for the guild.
-func (handler *InteractionHandler) listAssignments(span *sentry.Span, bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) listAssignments(span *sentry.Span, bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	span = span.StartChild("/assignments listAssignments")
 	defer span.Finish()
 

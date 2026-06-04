@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/dragonejt/hakase-discord/clients"
 	"github.com/dragonejt/hakase-discord/interactions"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -24,40 +25,94 @@ type MockInteraction struct {
 	mock.Mock
 }
 
-func (m *MockInteraction) UpdateAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (m *MockInteraction) UpdateAssignment(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	m.Called(bot, interactionCreate)
 }
 
-func (m *MockInteraction) UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (m *MockInteraction) UpdateAssignmentSubmit(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	m.Called(bot, interactionCreate)
 }
 
-func (m *MockInteraction) DeleteAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (m *MockInteraction) DeleteAssignment(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	m.Called(bot, interactionCreate)
 }
 
-func (m *MockInteraction) AddAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (m *MockInteraction) AddAssignment(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	m.Called(bot, interactionCreate)
 }
 
-func (m *MockInteraction) AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (m *MockInteraction) AddAssignmentSubmit(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	m.Called(bot, interactionCreate)
 }
 
-func (m *MockInteraction) UpdateNotifyChannel(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (m *MockInteraction) UpdateNotifyChannel(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	m.Called(bot, interactionCreate)
 }
 
-func (m *MockInteraction) UpdateNotifyRole(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (m *MockInteraction) UpdateNotifyRole(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	m.Called(bot, interactionCreate)
 }
 
-func (m *MockInteraction) SlashAssignments(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (m *MockInteraction) SlashAssignments(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	m.Called(bot, interactionCreate)
 }
 
-func (m *MockInteraction) SlashHakase(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (m *MockInteraction) SlashHakase(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	m.Called(bot, interactionCreate)
+}
+
+type MockDiscordClient struct {
+	mock.Mock
+}
+
+func (m *MockDiscordClient) UpdateCustomStatus(state string) error {
+	args := m.Called(state)
+	return args.Error(0)
+}
+
+func (m *MockDiscordClient) Guild(guildID string, options ...discordgo.RequestOption) (*discordgo.Guild, error) {
+	args := m.Called(guildID, options)
+	return args.Get(0).(*discordgo.Guild), args.Error(1)
+}
+
+func (m *MockDiscordClient) ChannelMessageSendComplex(channelID string, data *discordgo.MessageSend, options ...discordgo.RequestOption) (*discordgo.Message, error) {
+	args := m.Called(channelID, data, options)
+	return args.Get(0).(*discordgo.Message), args.Error(1)
+}
+
+func (m *MockDiscordClient) InteractionRespond(interaction *discordgo.Interaction, resp *discordgo.InteractionResponse, options ...discordgo.RequestOption) error {
+	args := m.Called(interaction, resp, options)
+	return args.Error(0)
+}
+
+func (m *MockDiscordClient) FollowupMessageCreate(interaction *discordgo.Interaction, wait bool, data *discordgo.WebhookParams, options ...discordgo.RequestOption) (*discordgo.Message, error) {
+	args := m.Called(interaction, wait, data, options)
+	return args.Get(0).(*discordgo.Message), args.Error(1)
+}
+
+func (m *MockDiscordClient) UserGuilds(limit int, beforeID, afterID string, withCounts bool, options ...discordgo.RequestOption) ([]*discordgo.UserGuild, error) {
+	args := m.Called(limit, beforeID, afterID, withCounts, options)
+	return args.Get(0).([]*discordgo.UserGuild), args.Error(1)
+}
+
+func (m *MockDiscordClient) GuildScheduledEvents(guildID string, userCount bool, options ...discordgo.RequestOption) ([]*discordgo.GuildScheduledEvent, error) {
+	args := m.Called(guildID, userCount, options)
+	return args.Get(0).([]*discordgo.GuildScheduledEvent), args.Error(1)
+}
+
+func (m *MockDiscordClient) GuildScheduledEventEdit(guildID, eventID string, params *discordgo.GuildScheduledEventParams, options ...discordgo.RequestOption) (*discordgo.GuildScheduledEvent, error) {
+	args := m.Called(guildID, eventID, params, options)
+	return args.Get(0).(*discordgo.GuildScheduledEvent), args.Error(1)
+}
+
+func (m *MockDiscordClient) GuildScheduledEventCreate(guildID string, params *discordgo.GuildScheduledEventParams, options ...discordgo.RequestOption) (*discordgo.GuildScheduledEvent, error) {
+	args := m.Called(guildID, params, options)
+	return args.Get(0).(*discordgo.GuildScheduledEvent), args.Error(1)
+}
+
+func (m *MockDiscordClient) GuildScheduledEventDelete(guildID, eventID string, options ...discordgo.RequestOption) error {
+	args := m.Called(guildID, eventID, options)
+	return args.Error(0)
 }
 
 func (suite *InteractionsTestSuite) SetupTest() {
@@ -68,7 +123,7 @@ func (suite *InteractionsTestSuite) SetupTest() {
 }
 
 func (suite *InteractionsTestSuite) TestInteractionCreate_ApplicationCommand_Assignments() {
-	bot := &discordgo.Session{}
+	bot := new(MockDiscordClient)
 	interactionCreate := &discordgo.InteractionCreate{
 		Interaction: &discordgo.Interaction{
 			Type: discordgo.InteractionApplicationCommand,
@@ -86,7 +141,7 @@ func (suite *InteractionsTestSuite) TestInteractionCreate_ApplicationCommand_Ass
 }
 
 func (suite *InteractionsTestSuite) TestInteractionCreate_ApplicationCommand_Hakase() {
-	bot := &discordgo.Session{}
+	bot := new(MockDiscordClient)
 	interactionCreate := &discordgo.InteractionCreate{
 		Interaction: &discordgo.Interaction{
 			Type: discordgo.InteractionApplicationCommand,
@@ -104,7 +159,7 @@ func (suite *InteractionsTestSuite) TestInteractionCreate_ApplicationCommand_Hak
 }
 
 func (suite *InteractionsTestSuite) TestInteractionCreate_MessageComponent_AddAssignment() {
-	bot := &discordgo.Session{}
+	bot := new(MockDiscordClient)
 	interactionCreate := &discordgo.InteractionCreate{
 		Interaction: &discordgo.Interaction{
 			Type: discordgo.InteractionMessageComponent,
@@ -122,7 +177,7 @@ func (suite *InteractionsTestSuite) TestInteractionCreate_MessageComponent_AddAs
 }
 
 func (suite *InteractionsTestSuite) TestInteractionCreate_MessageComponent_UpdateAssignment() {
-	bot := &discordgo.Session{}
+	bot := new(MockDiscordClient)
 	interactionCreate := &discordgo.InteractionCreate{
 		Interaction: &discordgo.Interaction{
 			Type: discordgo.InteractionMessageComponent,
@@ -140,7 +195,7 @@ func (suite *InteractionsTestSuite) TestInteractionCreate_MessageComponent_Updat
 }
 
 func (suite *InteractionsTestSuite) TestInteractionCreate_MessageComponent_DeleteAssignment() {
-	bot := &discordgo.Session{}
+	bot := new(MockDiscordClient)
 	interactionCreate := &discordgo.InteractionCreate{
 		Interaction: &discordgo.Interaction{
 			Type: discordgo.InteractionMessageComponent,
@@ -158,7 +213,7 @@ func (suite *InteractionsTestSuite) TestInteractionCreate_MessageComponent_Delet
 }
 
 func (suite *InteractionsTestSuite) TestInteractionCreate_MessageComponent_UpdateNotifyChannel() {
-	bot := &discordgo.Session{}
+	bot := new(MockDiscordClient)
 	interactionCreate := &discordgo.InteractionCreate{
 		Interaction: &discordgo.Interaction{
 			Type: discordgo.InteractionMessageComponent,
@@ -176,7 +231,7 @@ func (suite *InteractionsTestSuite) TestInteractionCreate_MessageComponent_Updat
 }
 
 func (suite *InteractionsTestSuite) TestInteractionCreate_MessageComponent_UpdateNotifyRole() {
-	bot := &discordgo.Session{}
+	bot := new(MockDiscordClient)
 	interactionCreate := &discordgo.InteractionCreate{
 		Interaction: &discordgo.Interaction{
 			Type: discordgo.InteractionMessageComponent,
@@ -194,7 +249,7 @@ func (suite *InteractionsTestSuite) TestInteractionCreate_MessageComponent_Updat
 }
 
 func (suite *InteractionsTestSuite) TestInteractionCreate_ModalSubmit_AddAssignment() {
-	bot := &discordgo.Session{}
+	bot := new(MockDiscordClient)
 	interactionCreate := &discordgo.InteractionCreate{
 		Interaction: &discordgo.Interaction{
 			Type: discordgo.InteractionModalSubmit,
@@ -212,7 +267,7 @@ func (suite *InteractionsTestSuite) TestInteractionCreate_ModalSubmit_AddAssignm
 }
 
 func (suite *InteractionsTestSuite) TestInteractionCreate_ModalSubmit_UpdateAssignment() {
-	bot := &discordgo.Session{}
+	bot := new(MockDiscordClient)
 	interactionCreate := &discordgo.InteractionCreate{
 		Interaction: &discordgo.Interaction{
 			Type: discordgo.InteractionModalSubmit,

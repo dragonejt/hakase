@@ -16,7 +16,7 @@ import (
 )
 
 // AddAssignment opens a modal for adding a new assignment via Discord interaction.
-func (handler *InteractionHandler) AddAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) AddAssignment(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	transaction := sentry.StartTransaction(context.Background(), "addAssignmentAction")
 	defer transaction.Finish()
 	slog.Debug("addAssignment executed", "username", interactionCreate.Member.User.Username, "user_id", interactionCreate.Member.User.ID, "guild_id", interactionCreate.GuildID)
@@ -49,7 +49,7 @@ func (handler *InteractionHandler) AddAssignment(bot *discordgo.Session, interac
 }
 
 // AddAssignmentSubmit handles the submission of the add assignment modal and creates the assignment.
-func (handler *InteractionHandler) AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) AddAssignmentSubmit(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	slog.Info("addAssignmentSubmit executed", "username", interactionCreate.Member.User.Username, "user_id", interactionCreate.Member.User.ID, "guild_id", interactionCreate.GuildID)
 	transaction := sentry.StartTransaction(context.Background(), "addAssignmentSubmit")
 	defer transaction.Finish()

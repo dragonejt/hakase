@@ -6,15 +6,15 @@ import (
 )
 
 type Interaction interface {
-	UpdateAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
-	UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
-	DeleteAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
-	AddAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
-	AddAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
-	UpdateNotifyChannel(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
-	UpdateNotifyRole(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
-	SlashAssignments(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
-	SlashHakase(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
+	UpdateAssignment(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate)
+	UpdateAssignmentSubmit(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate)
+	DeleteAssignment(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate)
+	AddAssignment(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate)
+	AddAssignmentSubmit(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate)
+	UpdateNotifyChannel(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate)
+	UpdateNotifyRole(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate)
+	SlashAssignments(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate)
+	SlashHakase(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate)
 }
 
 type InteractionHandler struct {

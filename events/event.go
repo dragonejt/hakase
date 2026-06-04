@@ -7,10 +7,10 @@ import (
 )
 
 type Event interface {
-	GuildCreate(bot *discordgo.Session, guildCreate *discordgo.GuildCreate)
-	GuildDelete(bot *discordgo.Session, guildDelete *discordgo.GuildDelete)
-	InteractionCreate(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
-	Ready(bot *discordgo.Session, ready *discordgo.Ready)
+	GuildCreate(bot clients.DiscordClient, guildCreate *discordgo.GuildCreate)
+	GuildDelete(bot clients.DiscordClient, guildDelete *discordgo.GuildDelete)
+	InteractionCreate(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate)
+	Ready(bot clients.DiscordClient, ready *discordgo.Ready)
 }
 
 type EventHandler struct {

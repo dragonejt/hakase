@@ -15,7 +15,7 @@ import (
 	"github.com/palantir/stacktrace"
 )
 
-func (handler *EventHandler) RegisterAssignmentHandler(bot *discordgo.Session, signal chan os.Signal) {
+func (handler *EventHandler) RegisterAssignmentHandler(bot clients.DiscordClient, signal chan os.Signal) {
 	scheduler, err := gocron.NewScheduler()
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to start cron").Error())
@@ -45,7 +45,7 @@ var AssignmentStatusDuration = map[string]time.Duration{
 	"one day":  24 * time.Hour,
 }
 
-func (handler *EventHandler) ProcessAssignments(bot *discordgo.Session) {
+func (handler *EventHandler) ProcessAssignments(bot clients.DiscordClient) {
 	transaction := sentry.StartTransaction(context.Background(), "processAssignments")
 	defer transaction.Finish()
 
@@ -106,7 +106,7 @@ func (handler *EventHandler) ProcessAssignments(bot *discordgo.Session) {
 
 }
 
-func (handler *EventHandler) sendAssignmentNotification(span *sentry.Span, bot *discordgo.Session, assignment clients.Assignment, newStatus string) {
+func (handler *EventHandler) sendAssignmentNotification(span *sentry.Span, bot clients.DiscordClient, assignment clients.Assignment, newStatus string) {
 	course, err := handler.HakaseClient.ReadCourse(span, assignment.CourseID)
 	if err != nil {
 		slog.Error(stacktrace.Propagate(err, "failed to read course of assignment: %s", assignment.ID).Error())

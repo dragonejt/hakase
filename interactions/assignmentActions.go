@@ -10,13 +10,14 @@ import (
 
 	"github.com/araddon/dateparse"
 	"github.com/bwmarrin/discordgo"
+	"github.com/dragonejt/hakase-discord/clients"
 	"github.com/dragonejt/hakase-discord/views"
 	"github.com/getsentry/sentry-go"
 	"github.com/palantir/stacktrace"
 )
 
 // UpdateAssignment opens a modal for updating an assignment via Discord interaction.
-func (handler *InteractionHandler) UpdateAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) UpdateAssignment(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	transaction := sentry.StartTransaction(context.Background(), "updateAssignmentAction")
 	defer transaction.Finish()
 	slog.Debug("updateAssignment executed", "username", interactionCreate.Member.User.Username, "user_id", interactionCreate.Member.User.ID, "guild_id", interactionCreate.GuildID)
@@ -65,7 +66,7 @@ func (handler *InteractionHandler) UpdateAssignment(bot *discordgo.Session, inte
 }
 
 // UpdateAssignmentSubmit handles the submission of the update assignment modal and updates the assignment.
-func (handler *InteractionHandler) UpdateAssignmentSubmit(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) UpdateAssignmentSubmit(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	slog.Info("updateAssignmentSubmit executed", "username", interactionCreate.Member.User.Username, "user_id", interactionCreate.Member.User.ID, "guild_id", interactionCreate.GuildID)
 	transaction := sentry.StartTransaction(context.Background(), "updateAssignmentSubmit")
 	defer transaction.Finish()
@@ -178,7 +179,7 @@ func (handler *InteractionHandler) UpdateAssignmentSubmit(bot *discordgo.Session
 }
 
 // DeleteAssignment deletes an assignment based on user interaction.
-func (handler *InteractionHandler) DeleteAssignment(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) DeleteAssignment(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	slog.Debug("deleteAssignment executed", "username", interactionCreate.Member.User.Username, "user_id", interactionCreate.Member.User.ID, "guild_id", interactionCreate.GuildID)
 	transaction := sentry.StartTransaction(context.Background(), "deleteAssignmentAction")
 	defer transaction.Finish()

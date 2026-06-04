@@ -6,11 +6,12 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/dragonejt/hakase-discord/clients"
 	"github.com/palantir/stacktrace"
 )
 
 // InteractionCreate dispatches Discord interactions to the appropriate handler based on type and command.
-func (handler *EventHandler) InteractionCreate(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *EventHandler) InteractionCreate(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	interaction := handler.InteractionHandler
 	switch interactionCreate.Type {
 	case discordgo.InteractionApplicationCommand:

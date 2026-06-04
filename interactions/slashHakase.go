@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/dragonejt/hakase-discord/clients"
 	"github.com/dragonejt/hakase-discord/views"
 	"github.com/getsentry/sentry-go"
 	"github.com/palantir/stacktrace"
@@ -48,7 +49,7 @@ var rockPaperScissorsGIFS = []string{
 
 // SlashHakase handles the /hakase slash command interaction.
 // It dispatches subcommands such as rock-paper-scissors and config.
-func (handler *InteractionHandler) SlashHakase(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) SlashHakase(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(interactionCreate.ApplicationCommandData().Options))
 	for _, opt := range interactionCreate.ApplicationCommandData().Options {
 		optionMap[opt.Name] = opt
@@ -72,7 +73,7 @@ func (handler *InteractionHandler) SlashHakase(bot *discordgo.Session, interacti
 }
 
 // ping responds to the /hakase command with a pong and backend response time.
-func (handler *InteractionHandler) ping(span *sentry.Span, bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) ping(span *sentry.Span, bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	span = span.StartChild("/hakase ping")
 	defer span.Finish()
 
@@ -95,7 +96,7 @@ func (handler *InteractionHandler) ping(span *sentry.Span, bot *discordgo.Sessio
 }
 
 // rockPaperScissors responds with a random rock-paper-scissors GIF.
-func (handler *InteractionHandler) rockPaperScissors(span *sentry.Span, bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) rockPaperScissors(span *sentry.Span, bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	span = span.StartChild("/hakase rockPaperScissors")
 	defer span.Finish()
 
@@ -111,7 +112,7 @@ func (handler *InteractionHandler) rockPaperScissors(span *sentry.Span, bot *dis
 }
 
 // config responds with the course configuration embed and components.
-func (handler *InteractionHandler) config(span *sentry.Span, bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) config(span *sentry.Span, bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	span = span.StartChild("/hakase config")
 	defer span.Finish()
 

@@ -7,13 +7,14 @@ import (
 	"log/slog"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/dragonejt/hakase-discord/clients"
 	"github.com/dragonejt/hakase-discord/views"
 	"github.com/getsentry/sentry-go"
 	"github.com/palantir/stacktrace"
 )
 
 // UpdateNotifyChannel updates the notifications channel for a course based on user interaction.
-func (handler *InteractionHandler) UpdateNotifyChannel(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) UpdateNotifyChannel(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	transaction := sentry.StartTransaction(context.Background(), "updateNotifyChannel")
 	defer transaction.Finish()
 	slog.Debug("updateNotifyChannel executed", "username", interactionCreate.Member.User.Username, "user_id", interactionCreate.Member.User.ID, "guild_id", interactionCreate.GuildID)
@@ -94,7 +95,7 @@ func (handler *InteractionHandler) UpdateNotifyChannel(bot *discordgo.Session, i
 }
 
 // UpdateNotifyRole updates the notifications role for a course based on user interaction.
-func (handler *InteractionHandler) UpdateNotifyRole(bot *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func (handler *InteractionHandler) UpdateNotifyRole(bot clients.DiscordClient, interactionCreate *discordgo.InteractionCreate) {
 	transaction := sentry.StartTransaction(context.Background(), "updateNotifyRole")
 	defer transaction.Finish()
 	slog.Debug("updateNotifyRole executed", "username", interactionCreate.Member.User.Username, "user_id", interactionCreate.Member.User.ID, "guild_id", interactionCreate.GuildID)
