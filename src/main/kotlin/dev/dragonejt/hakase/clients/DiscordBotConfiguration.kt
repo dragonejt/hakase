@@ -13,21 +13,17 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 @EnableConfigurationProperties(DiscordProperties::class)
-class DiscordBotConfiguration {
+class DiscordBotConfiguration(
+    private val kordFactory: (String) -> Kord = { token -> runBlocking { Kord(token) } }
+) {
+    @Bean
+    fun discordBot(
+        properties: DiscordProperties,
+        eventHandlers: List<EventHandler<out GatewayEvent>>,
+    ): Kord {
+        val bot: Kord = kordFactory(properties.token)
 
-  @Bean
-  fun kord(
-      properties: DiscordProperties,
-      eventHandlers: List<EventHandler<out GatewayEvent>>,
-  ): Kord = runBlocking { discordBot(properties, eventHandlers) }
-
-  suspend fun discordBot(
-      properties: DiscordProperties,
-      eventHandlers: List<EventHandler<out GatewayEvent>>,
-  ): Kord {
-    val bot = Kord(properties.token)
-
-    eventHandlers.forEach { handler -> handler.register(bot) }
-    return bot
-  }
+        eventHandlers.forEach { handler -> handler.register(bot) }
+        return bot
+    }
 }

@@ -6,5 +6,5 @@ import org.springframework.boot.runApplication
 @SpringBootApplication class HakaseApplication
 
 fun main(args: Array<String>) {
-  runApplication<HakaseApplication>(*args)
+    runApplication<HakaseApplication>(*args)
 }

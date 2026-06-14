@@ -9,14 +9,13 @@ import org.springframework.stereotype.Service
 
 @Service
 class ReadyHandler : EventHandler<ReadyEvent> {
+    private val log = KotlinLogging.logger {}
 
-  private val log = KotlinLogging.logger {}
+    override fun register(bot: Kord) {
+        bot.on<ReadyEvent> { handleEvent(this) }
+    }
 
-  override fun register(bot: Kord) {
-    bot.on<ReadyEvent> { handleEvent(this) }
-  }
-
-  override fun handleEvent(event: ReadyEvent) {
-    log.info { "Logged in as ${event.self.effectiveName}!" }
-  }
+    override fun handleEvent(event: ReadyEvent) {
+        log.info { "Logged in as ${event.self.effectiveName}!" }
+    }
 }

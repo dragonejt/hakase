@@ -4,7 +4,7 @@ import dev.kord.core.Kord
 import dev.kord.core.event.gateway.GatewayEvent
 
 interface EventHandler<T : GatewayEvent> {
-  fun register(bot: Kord)
+    fun register(bot: Kord)
 
-  fun handleEvent(event: T)
+    fun handleEvent(event: T)
 }

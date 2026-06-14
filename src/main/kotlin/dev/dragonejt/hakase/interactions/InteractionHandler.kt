@@ -1,3 +1,3 @@
 package dev.dragonejt.hakase.interactions
 
-interface InteractionHandler {}
+interface InteractionHandler

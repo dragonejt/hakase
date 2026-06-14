@@ -14,36 +14,35 @@ import org.springframework.stereotype.Component
 
 @Component
 class DiscordBotLifecycle(private val bot: Kord) : SmartLifecycle {
+    private val log = KotlinLogging.logger {}
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var running = AtomicBoolean(false)
 
-  private val log = KotlinLogging.logger {}
-  private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-  private var running = AtomicBoolean(false)
+    override fun start() {
+        log.info { "Starting Discord Bot..." }
+        if (!running.compareAndSet(false, true)) return
 
-  override fun start() {
-    log.info { "Starting Discord Bot..." }
-    if (!running.compareAndSet(false, true)) return
-
-    scope.launch {
-      bot.login()
-      running.set(false)
+        scope.launch {
+            bot.login()
+            running.set(false)
+        }
     }
-  }
 
-  override fun stop() {
-    stop {}
-  }
-
-  override fun stop(callback: Runnable) {
-    log.info { "Stopping Discord Bot..." }
-    runBlocking {
-      bot.logout()
-      scope.cancel()
-      running.set(false)
-      callback.run()
+    override fun stop() {
+        stop {}
     }
-  }
 
-  override fun isRunning(): Boolean = running.get()
+    override fun stop(callback: Runnable) {
+        log.info { "Stopping Discord Bot..." }
+        runBlocking {
+            bot.logout()
+            scope.cancel()
+            running.set(false)
+            callback.run()
+        }
+    }
 
-  override fun isAutoStartup() = true
+    override fun isRunning(): Boolean = running.get()
+
+    override fun isAutoStartup() = true
 }
