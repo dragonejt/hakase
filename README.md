@@ -1,5 +1,6 @@
 # hakase-discord
 [![codacy](https://app.codacy.com/project/badge/Grade/dc0e8d6ee88549f3b6f58b5c66d39040)](https://app.codacy.com/gh/dragonejt/hakase/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![coverage](https://app.codacy.com/project/badge/Coverage/dc0e8d6ee88549f3b6f58b5c66d39040)](https://app.codacy.com/gh/dragonejt/hakase/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage)
 [![integration](https://github.com/dragonejt/hakase/actions/workflows/integrate.yml/badge.svg)](https://github.com/dragonejt/hakase/actions/workflows/integrate.yml)
 [![delivery](https://github.com/dragonejt/hakase/actions/workflows/deliver.yml/badge.svg)](https://github.com/dragonejt/hakase/actions/workflows/deliver.yml)
 
