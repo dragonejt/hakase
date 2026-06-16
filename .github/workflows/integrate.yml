@@ -31,10 +31,11 @@ jobs:
     - name: Build with Gradle
       run: gradle --no-daemon build
 
-    - name: SonarQube Scan with Gradle
-      run: gradle --no-daemon sonar
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    - name: Upload Coverage to Codacy
+      uses: codacy/codacy-coverage-reporter-action@v1.3.0
+      with:
+        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        coverage-reports: test-results/test/
     
     - name: Create Sentry Release
       uses: getsentry/action-release@v3

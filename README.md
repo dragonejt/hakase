@@ -1,17 +1,15 @@
 # hakase-discord
-[![godoc](https://pkg.go.dev/badge/github.com/dragonejt/hakase.svg)](https://pkg.go.dev/github.com/dragonejt/hakase)
+[![codacy](https://app.codacy.com/project/badge/Grade/dc0e8d6ee88549f3b6f58b5c66d39040)](https://app.codacy.com/gh/dragonejt/hakase/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![integration](https://github.com/dragonejt/hakase/actions/workflows/integrate.yml/badge.svg)](https://github.com/dragonejt/hakase/actions/workflows/integrate.yml)
 [![delivery](https://github.com/dragonejt/hakase/actions/workflows/deliver.yml/badge.svg)](https://github.com/dragonejt/hakase/actions/workflows/deliver.yml)
-[![codecov](https://codecov.io/gh/dragonejt/hakase/graph/badge.svg?token=7MEF3IHI00)](https://codecov.io/gh/dragonejt/hakase)
-[![go report card](https://goreportcard.com/badge/github.com/dragonejt/hakase)](https://goreportcard.com/report/github.com/dragonejt/hakase)
 
-hakase is a collection of helpful utilities for class chatrooms, including an assignment due date reminder, study session scheduler, and more. It is currently under development. This repository holds the Discord Bot, built with Go.
+hakase is a collection of helpful utilities for class chatrooms, including an assignment due date reminder, study session scheduler, and more. It is currently under development. This repository holds the Discord Bot, built with Spring Boot on Kotlin.
 
 ## Local Development
 ### Building and Running
-Local development with hakase-discord is relatively simple. The only command you have to run is:
+To start off in VS Code, install the [Kotlin by JetBrains](https://marketplace.visualstudio.com/items?itemName=JetBrains.kotlin-server) extension. Local development with hakase-discord is relatively simple. The only command you have to run is:
 ```sh
-go run hakase-discord.go
+./gradlew bootRun
 ```
 You do have to have some environment variables in place. hakase does not directly read from a .env file, but you can configure environment variables or reference a .env file through IDE launch options. Otherwise, you can set environment variables locally.
 ```sh
@@ -19,23 +17,26 @@ ENV="development"
 DISCORD_BOT_TOKEN="from Discord Dev Portal"
 BACKEND_URL="from Backend API"
 BACKEND_AUTH_TOKEN="from Backend API"
-ANTHROPIC_BASE_URL="from Anthropic-compatible LLM API"
-ANTHROPIC_AUTH_TOKEN="from Anthropic-compatible LLM API"
-ANTHROPIC_MODEL="from Anthropic-compatible LLM API"
+```
+To only build the project without running the Spring Boot application, run the following:
+```bash
+./gradlew build
 ```
 
 ### Testing
 For testing, the following command should be run, with the above environment variables in place:
 ```bash
-go test ./...
+./gradlew test
 ```
-This uses Go's built-in test runner which will discover and test all `_test.go` files. The integrate.yml GitHub Actions workflow will run these tests with code coverage (`-coverpkg=./... -coverprofile=coverage.txt`).
-
-If you are using VS Code, the [VS Code Go extension](https://marketplace.visualstudio.com/items?itemName=golang.go) will enable automatic test discovery and running in the Testing sidebar.
+Tests are JUnit based, with Mockito for the mocking library. The integrate.yml GitHub Actions workflow will run these tests with coverage.
 
 ### Linting and Formatting
-Go and the [VS Code Go Extension](https://marketplace.visualstudio.com/items?itemName=golang.Go) automatically performs linting and formatting on save. 
-The `integrate.yml` GitHub Actions workflow will check for linting errors and formatting mistakes with [golangci-lint](https://github.com/golangci/golangci-lint-action).
+This project uses [detekt](https://detekt.dev/) for linting and [ktfmt](https://facebook.github.io/ktfmt/) for code formatting. The gradle build task will check both linting and code formatting, but to fix linting and formatting errors, run:
+```bash
+./gradlew detekt # linting
+./gradlew spotlessApply # formatting
+```
+The `integrate.yml` GitHub Actions workflow will check for linting errors and formatting mistakes as a part of the gradle build task.
 
 ## Deployment
 For deployment, hakase is built into a Docker image with [Heroku Cloud Native Buildpacks](https://github.com/heroku/cnb-builder-images), and then deployed into a container via Palantir Compute Modules.

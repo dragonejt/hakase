@@ -3,6 +3,7 @@ package dev.dragonejt.hakase.clients
 import dev.dragonejt.hakase.events.EventHandler
 import dev.kord.core.Kord
 import dev.kord.core.event.gateway.GatewayEvent
+import kotlin.test.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -38,5 +39,8 @@ class DiscordBotConfigurationTests {
         eventHandlers.forEach { handler -> verify(handler).register(bot) }
     }
 
-    private fun mockKordFactory(token: String): Kord = this.bot
+    private fun mockKordFactory(token: String): Kord {
+        assertEquals(properties.token, token)
+        return bot
+    }
 }
