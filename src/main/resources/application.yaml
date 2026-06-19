@@ -6,10 +6,25 @@ discord:
   token: ${DISCORD_BOT_TOKEN}
 
 sentry:
-  dsn: https://803b0d97ed9756be1f531412d572f408@o4507124907638784.ingest.us.sentry.io/4509828350476288
+  dsn: ${SENTRY_DSN}
   send-default-pii: true
-  tracesSampleRate: 1.0
-  profileSessionSampleRate: 1.0
-  profileLifecycle: TRACE
+  traces-sample-rate: 1.0
+  profile-session-sample-rate: 1.0
+  profile-lifecycle: TRACE
   logs:
     enabled: true
+
+otel:
+  propagators: sentry
+  traces:
+    exporter: otlp
+  exporter:
+    otlp:
+      traces:
+        endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
+        protocol: http/protobuf
+        headers: ${OTEL_EXPORTER_OTLP_TRACES_HEADERS}
+  logs:
+    exporter: none
+  metrics:
+    exporter: none
