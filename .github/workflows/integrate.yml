@@ -59,13 +59,22 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v6
 
+    - name: Setup Java
+      uses: actions/setup-java@v5
+      with:
+        distribution: zulu
+        java-version: "25"
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v6
+
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
       with:
         languages: java-kotlin
 
-    - name: AutoBuild
-      uses: github/codeql-action/autobuild@v4
+    - name: Build Project
+      run: gradle build
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
