@@ -1,8 +1,10 @@
 package dev.dragonejt.hakase.clients
 
 import dev.dragonejt.hakase.events.EventHandler
+import dev.dragonejt.hakase.interactions.InteractionHandler
 import dev.kord.core.Kord
 import dev.kord.core.event.gateway.GatewayEvent
+import dev.kord.core.event.interaction.InteractionCreateEvent
 import kotlinx.coroutines.runBlocking
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -20,10 +22,12 @@ class DiscordBotConfiguration(
     fun discordBot(
         properties: DiscordProperties,
         eventHandlers: List<EventHandler<out GatewayEvent>>,
-    ): Kord {
+        interactionHandlers: List<InteractionHandler<out InteractionCreateEvent>>,
+    ): Kord = runBlocking {
         val bot: Kord = kordFactory(properties.token)
-
         eventHandlers.forEach { handler -> handler.register(bot) }
-        return bot
+        interactionHandlers.forEach { handler -> handler.register(bot) }
+
+        return@runBlocking bot
     }
 }

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service
 class ReadyHandler(private val tracer: Tracer) : EventHandler<ReadyEvent> {
     private val log = KotlinLogging.logger {}
 
-    override fun register(bot: Kord) {
+    override suspend fun register(bot: Kord) {
         bot.on<ReadyEvent> {
             val span = tracer.spanBuilder("events.ready").setSpanKind(SpanKind.SERVER).startSpan()
             val scope = span.makeCurrent()
@@ -25,7 +25,7 @@ class ReadyHandler(private val tracer: Tracer) : EventHandler<ReadyEvent> {
         }
     }
 
-    override fun handleEvent(event: ReadyEvent) {
+    override suspend fun handleEvent(event: ReadyEvent) {
         log.info { "Logged in as ${event.self.effectiveName}!" }
     }
 }
