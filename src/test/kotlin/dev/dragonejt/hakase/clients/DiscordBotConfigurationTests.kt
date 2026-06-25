@@ -3,8 +3,8 @@ package dev.dragonejt.hakase.clients
 import dev.dragonejt.hakase.events.EventHandler
 import dev.dragonejt.hakase.interactions.InteractionHandler
 import dev.kord.core.Kord
+import dev.kord.core.entity.interaction.Interaction
 import dev.kord.core.event.gateway.GatewayEvent
-import dev.kord.core.event.interaction.InteractionCreateEvent
 import kotlin.random.Random
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -25,7 +25,7 @@ class DiscordBotConfigurationTests {
 
     private lateinit var eventHandlers: List<EventHandler<out GatewayEvent>>
 
-    private lateinit var interactionHandlers: List<InteractionHandler<out InteractionCreateEvent>>
+    private lateinit var interactionHandlers: List<InteractionHandler<out Interaction>>
 
     private lateinit var underTest: DiscordBotConfiguration
 
@@ -37,7 +37,7 @@ class DiscordBotConfigurationTests {
             }
         interactionHandlers =
             List(Random.nextInt(10)) {
-                mock<InteractionHandler<out InteractionCreateEvent>>(InteractionHandler::class.java)
+                mock<InteractionHandler<out Interaction>>(InteractionHandler::class.java)
             }
 
         underTest = DiscordBotConfiguration(this::mockKordFactory)

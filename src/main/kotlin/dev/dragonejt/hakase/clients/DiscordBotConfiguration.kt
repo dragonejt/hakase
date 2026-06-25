@@ -5,7 +5,6 @@ import dev.dragonejt.hakase.interactions.InteractionHandler
 import dev.kord.core.Kord
 import dev.kord.core.entity.interaction.Interaction
 import dev.kord.core.event.gateway.GatewayEvent
-import dev.kord.core.event.interaction.InteractionCreateEvent
 import kotlinx.coroutines.runBlocking
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
