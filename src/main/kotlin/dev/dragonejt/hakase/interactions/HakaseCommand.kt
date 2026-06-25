@@ -1,14 +1,20 @@
 package dev.dragonejt.hakase.interactions
 
+import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
-import dev.kord.core.entity.interaction.Interaction
+import dev.kord.core.behavior.interaction.response.respond
+import dev.kord.core.entity.interaction.GuildChatInputCommandInteraction
 import dev.kord.core.event.interaction.GuildChatInputCommandInteractionCreateEvent
 import dev.kord.core.on
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.Tracer
+import org.springframework.stereotype.Service
 
+@Service
 class HakaseCommand(private val tracer: Tracer) :
-    InteractionHandler<GuildChatInputCommandInteractionCreateEvent> {
+    InteractionHandler<GuildChatInputCommandInteraction> {
+    private val log = KotlinLogging.logger {}
 
     override suspend fun register(bot: Kord) {
         bot.createGlobalChatInputCommand("hakase", "hakase settings")
@@ -22,7 +28,9 @@ class HakaseCommand(private val tracer: Tracer) :
         }
     }
 
-    override suspend fun handleInteraction(interaction: Interaction) {
-        TODO("Not yet implemented")
+    override suspend fun handleInteraction(interaction: GuildChatInputCommandInteraction) {
+        log.info { "/hakase executed by: ${interaction.user.username}" }
+        val response = interaction.deferPublicResponse()
+        response.respond { content = "hello" }
     }
 }

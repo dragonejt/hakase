@@ -3,6 +3,7 @@ package dev.dragonejt.hakase.clients
 import dev.dragonejt.hakase.events.EventHandler
 import dev.dragonejt.hakase.interactions.InteractionHandler
 import dev.kord.core.Kord
+import dev.kord.core.entity.interaction.Interaction
 import dev.kord.core.event.gateway.GatewayEvent
 import dev.kord.core.event.interaction.InteractionCreateEvent
 import kotlinx.coroutines.runBlocking
@@ -22,7 +23,7 @@ class DiscordBotConfiguration(
     fun discordBot(
         properties: DiscordProperties,
         eventHandlers: List<EventHandler<out GatewayEvent>>,
-        interactionHandlers: List<InteractionHandler<out InteractionCreateEvent>>,
+        interactionHandlers: List<InteractionHandler<out Interaction>>,
     ): Kord = runBlocking {
         val bot: Kord = kordFactory(properties.token)
         eventHandlers.forEach { handler -> handler.register(bot) }
