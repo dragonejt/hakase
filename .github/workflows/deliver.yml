@@ -22,7 +22,7 @@ jobs:
         with:
           registry: ${{ secrets.REGISTRY }}
           username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          password: ${{ secrets.FOUNDRY_AUTH_TOKEN }}
 
       - name: Setup Java
         uses: actions/setup-java@v5

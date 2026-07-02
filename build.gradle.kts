@@ -15,7 +15,23 @@ version = "0.0.1-SNAPSHOT"
 
 java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
 
-repositories { mavenCentral() }
+repositories {
+    mavenCentral()     
+    maven {
+        url = uri("https://dragonejt.usw-16.palantirfoundry.com/artifacts/api/repositories/ri.artifacts.main.repository.b76916e1-ce85-4aa6-a9ca-f7af9e3a3a58/contents/release/maven/")
+        credentials {
+            username = ""
+            password = System.getenv("FOUNDRY_AUTH_TOKEN")
+        }
+    }
+    maven {
+        url = uri("https://dragonejt.usw-16.palantirfoundry.com/artifacts/api/repositories/ri.foundry-sdk-asset-bundle.main.artifacts.repository/contents/release/maven/")
+        credentials {
+            username = ""
+            password = System.getenv("FOUNDRY_AUTH_TOKEN")
+        }
+    }
+}
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
@@ -27,6 +43,7 @@ dependencies {
     implementation("io.sentry:sentry-async-profiler:8.44.0")
     implementation("io.sentry:sentry-opentelemetry-otlp-spring:8.44.0")
     implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.28.1"))
+    implementation("dev.dragonejt:hakase-sdk:0.2.0")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
