@@ -1,31 +1,26 @@
 package dev.dragonejt.hakase.events
 
-import dev.kord.core.Kord
-import dev.kord.core.entity.effectiveName
-import dev.kord.core.event.gateway.ReadyEvent
-import dev.kord.core.on
+import dev.minn.jda.ktx.events.CoroutineEventListener
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.Tracer
+import net.dv8tion.jda.api.events.GenericEvent
+import net.dv8tion.jda.api.events.session.ReadyEvent
 import org.springframework.stereotype.Service
 
 @Service
-class ReadyHandler(private val tracer: Tracer) : EventHandler<ReadyEvent> {
+class ReadyHandler(private val tracer: Tracer) : CoroutineEventListener {
     private val log = KotlinLogging.logger {}
 
-    override suspend fun register(bot: Kord) {
-        bot.on<ReadyEvent> {
-            val span = tracer.spanBuilder("events.ready").setSpanKind(SpanKind.SERVER).startSpan()
-            val scope = span.makeCurrent()
+    override suspend fun onEvent(event: GenericEvent) {
+        if (event !is ReadyEvent) return
 
-            handleEvent(this)
+        val span = tracer.spanBuilder("events.ready").setSpanKind(SpanKind.SERVER).startSpan()
+        val scope = span.makeCurrent()
 
-            scope.close()
-            span.end()
-        }
-    }
+        log.info { "Logged in as ${event.jda.selfUser.name}!" }
 
-    override suspend fun handleEvent(event: ReadyEvent) {
-        log.info { "Logged in as ${event.self.effectiveName}!" }
+        scope.close()
+        span.end()
     }
 }

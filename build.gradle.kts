@@ -20,7 +20,8 @@ repositories { mavenCentral() }
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("dev.kord:kord-core:0.18.1")
+    implementation("net.dv8tion:JDA:6.4.2")
+    implementation("club.minnced:jda-ktx:0.14.2")
     implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
     implementation("io.sentry:sentry-spring-boot-4:8.44.0")
     implementation("io.sentry:sentry-async-profiler:8.44.0")

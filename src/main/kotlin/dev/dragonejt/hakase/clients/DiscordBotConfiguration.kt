@@ -1,11 +1,13 @@
 package dev.dragonejt.hakase.clients
 
-import dev.dragonejt.hakase.events.EventHandler
-import dev.dragonejt.hakase.interactions.InteractionHandler
-import dev.kord.core.Kord
-import dev.kord.core.entity.interaction.Interaction
-import dev.kord.core.event.gateway.GatewayEvent
+import dev.minn.jda.ktx.events.CoroutineEventListener
+import dev.minn.jda.ktx.events.CoroutineEventManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
+import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.hooks.EventListener
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -15,19 +17,29 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 @EnableConfigurationProperties(DiscordProperties::class)
-class DiscordBotConfiguration(
-    private val kordFactory: (String) -> Kord = { token -> runBlocking { Kord(token) } }
-) {
+class DiscordBotConfiguration {
     @Bean
     fun discordBot(
         properties: DiscordProperties,
-        eventHandlers: List<EventHandler<out GatewayEvent>>,
-        interactionHandlers: List<InteractionHandler<out Interaction>>,
-    ): Kord = runBlocking {
-        val bot: Kord = kordFactory(properties.token)
-        eventHandlers.forEach { handler -> handler.register(bot) }
-        interactionHandlers.forEach { handler -> handler.register(bot) }
+        eventManager: CoroutineEventManager,
+        eventListeners: Array<EventListener>,
+        asyncEventListeners: Array<CoroutineEventListener>,
+    ): JDABuilder = runBlocking {
+        val bot = JDABuilder.createDefault(properties.token)
+        bot.addEventListeners(*eventListeners)
+        bot.addEventListeners(*asyncEventListeners)
+        bot.setEventManager(eventManager)
 
         return@runBlocking bot
+    }
+
+    @Bean
+    fun scope(): CoroutineScope {
+        return CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    }
+
+    @Bean
+    fun eventManager(scope: CoroutineScope): CoroutineEventManager {
+        return CoroutineEventManager(scope)
     }
 }
