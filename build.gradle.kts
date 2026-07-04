@@ -43,14 +43,16 @@ dependencies {
     implementation("io.sentry:sentry-async-profiler:8.44.0")
     implementation("io.sentry:sentry-opentelemetry-otlp-spring:8.44.0")
     implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.28.1"))
-    implementation("dev.dragonejt:hakase-sdk:0.2.0")
+    implementation("dev.dragonejt:hakase-sdk:0.2.0") {
+        exclude(group = "com.palantir.sls.logging", module = "sls-logging-log4j-slf4j")
+    }
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.mockito.kotlin:mockito-kotlin:6.3.0")
     testImplementation("org.assertj:assertj-core:3.27.7")
 
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
+    // developmentOnly("org.springframework.boot:spring-boot-devtools")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 

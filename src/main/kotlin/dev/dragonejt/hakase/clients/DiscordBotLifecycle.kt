@@ -4,8 +4,6 @@ import dev.dragonejt.hakase.interactions.SlashCommand
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import org.springframework.context.SmartLifecycle
@@ -23,14 +21,9 @@ class DiscordBotLifecycle(
     override fun start() {
         log.info { "Starting Discord Bot..." }
 
-        scope.launch {
-            bot = botConfig.build()
-            bot!!
-                .updateCommands()
-                .addCommands(commands.map { command -> command.command() })
-                .queue()
-            bot!!.awaitReady()
-        }
+        bot = botConfig.build()
+        bot!!.updateCommands().addCommands(commands.map { command -> command.command() }).queue()
+        bot!!.awaitReady()
     }
 
     override fun stop() {
@@ -39,11 +32,10 @@ class DiscordBotLifecycle(
 
     override fun stop(callback: Runnable) {
         log.info { "Stopping Discord Bot..." }
-        runBlocking {
-            bot!!.awaitShutdown()
-            scope.cancel()
-            callback.run()
-        }
+        bot!!.shutdown()
+        bot!!.awaitShutdown()
+        scope.cancel()
+        callback.run()
     }
 
     override fun isRunning(): Boolean = bot?.status == JDA.Status.CONNECTED
