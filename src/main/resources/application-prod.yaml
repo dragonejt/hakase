@@ -10,19 +10,28 @@ sentry:
   profile-session-sample-rate: 1.0
   profile-lifecycle: TRACE
   logs:
-    enabled: true
+    enabled: false
 
 otel:
   propagators: sentry
-  traces:
-    exporter: otlp
+  instrumentation:
+    logback-appender:
+      enabled: true
+      experimental:
+        capture-key-value-pair-attributes: true
   exporter:
     otlp:
       traces:
-        endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
+        endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces
         protocol: http/protobuf
-        headers: ${OTEL_EXPORTER_OTLP_TRACES_HEADERS}
+        headers: ${OTEL_EXPORTER_OTLP_HEADERS}
+      logs:
+        endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/logs
+        protocol: http/protobuf
+        headers: ${OTEL_EXPORTER_OTLP_HEADERS}
+  traces:
+    exporter: otlp
   logs:
-    exporter: none
+    exporter: otlp
   metrics:
     exporter: none

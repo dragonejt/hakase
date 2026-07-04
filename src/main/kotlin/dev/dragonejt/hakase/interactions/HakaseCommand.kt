@@ -6,7 +6,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.Tracer
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionType
@@ -34,16 +33,20 @@ class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScop
         if (event !is SlashCommandInteractionEvent || event.fullCommandName != command().name)
             return
 
-        scope.launch {
-            val span =
-                tracer.spanBuilder("commands.hakase").setSpanKind(SpanKind.SERVER).startSpan()
-            val scope = span.makeCurrent()
-            log.info { "/hakase executed by: ${event.user.effectiveName}" }
-
-            event.reply("hakase pong!").await()
-
-            scope.close()
-            span.end()
+        val span =
+            tracer
+                .spanBuilder("commands.${this.javaClass.simpleName}")
+                .setSpanKind(SpanKind.SERVER)
+                .startSpan()
+        val scope = span.makeCurrent()
+        log.atInfo {
+            message = "/hakase executed by: ${event.user.effectiveName}"
+            payload = mapOf("username" to event.user.effectiveName)
         }
+
+        event.reply("hakase pong!").await()
+
+        scope.close()
+        span.end()
     }
 }

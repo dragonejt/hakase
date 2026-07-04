@@ -15,10 +15,17 @@ class ReadyHandler(private val tracer: Tracer) : CoroutineEventListener {
     override suspend fun onEvent(event: GenericEvent) {
         if (event !is ReadyEvent) return
 
-        val span = tracer.spanBuilder("events.ready").setSpanKind(SpanKind.SERVER).startSpan()
+        val span =
+            tracer
+                .spanBuilder("events.${this.javaClass.simpleName}")
+                .setSpanKind(SpanKind.SERVER)
+                .startSpan()
         val scope = span.makeCurrent()
 
-        log.info { "Logged in as ${event.jda.selfUser.name}!" }
+        log.atInfo {
+            message = "Logged in as ${event.jda.selfUser.name}!"
+            payload = mapOf("bot_user" to event.jda.selfUser.name)
+        }
 
         scope.close()
         span.end()
