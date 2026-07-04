@@ -1,3 +1,7 @@
+logging:
+  level:
+    dev.dragonejt.hakase: DEBUG
+
 sentry:
   enabled: false
   logs:

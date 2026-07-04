@@ -1,8 +1,8 @@
 package dev.dragonejt.hakase.interactions
 
+import dev.dragonejt.hakase.telemetry.LogBase
 import dev.minn.jda.ktx.coroutines.await
 import dev.minn.jda.ktx.events.CoroutineEventListener
-import io.github.oshai.kotlinlogging.KotlinLogging
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.Tracer
 import kotlinx.coroutines.CoroutineScope
@@ -15,8 +15,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScope) :
-    SlashCommand, CoroutineEventListener {
-    private val log = KotlinLogging.logger {}
+    ApplicationCommand, CoroutineEventListener, LogBase() {
 
     override fun command() =
         Commands.slash("hakase", "hakase settings")

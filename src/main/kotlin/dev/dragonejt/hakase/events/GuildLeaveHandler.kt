@@ -6,14 +6,13 @@ import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.Tracer
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.events.GenericEvent
-import net.dv8tion.jda.api.events.session.ReadyEvent
+import net.dv8tion.jda.api.events.guild.GuildLeaveEvent
 import org.springframework.stereotype.Service
 
 @Service
-class ReadyHandler(private val tracer: Tracer) : CoroutineEventListener, LogBase() {
-
+class GuildLeaveHandler(private val tracer: Tracer) : CoroutineEventListener, LogBase() {
     override suspend fun onEvent(event: GenericEvent) {
-        if (event !is ReadyEvent) return
+        if (event !is GuildLeaveEvent) return
 
         val span =
             tracer
@@ -23,8 +22,8 @@ class ReadyHandler(private val tracer: Tracer) : CoroutineEventListener, LogBase
         val scope = span.makeCurrent()
 
         log.atInfo {
-            message = "Logged in as ${event.jda.selfUser.name}!"
-            payload = mapOf("bot_user" to event.jda.selfUser.name)
+            message = "Bot left guild ${event.guild.name} (${event.guild.id})"
+            payload = mapOf("guild_name" to event.guild.name, "guild_id" to event.guild.id)
         }
 
         event.jda.presence.activity =
