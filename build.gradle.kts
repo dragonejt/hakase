@@ -45,9 +45,9 @@ dependencies {
     implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
     implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.28.1"))
     implementation("dev.dragonejt:hakase-sdk:0.2.0") {
+        exclude(group = "org.slf4j", module = "slf4j-log4j12")
         exclude(group = "com.palantir.sls.logging", module = "sls-logging-log4j-slf4j")
     }
-    implementation("net.logstash.logback:logstash-logback-encoder:9.0")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

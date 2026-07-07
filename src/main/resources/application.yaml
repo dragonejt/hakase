@@ -5,3 +5,7 @@ spring:
 discord:
   token: ${DISCORD_BOT_TOKEN}
 
+ontology:
+  url: ${FOUNDRY_URL}
+  token: ${FOUNDRY_AUTH_TOKEN}
+

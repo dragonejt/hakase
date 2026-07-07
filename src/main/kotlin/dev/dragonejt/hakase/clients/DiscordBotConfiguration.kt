@@ -21,12 +21,12 @@ import org.springframework.context.annotation.Configuration
 class DiscordBotConfiguration : LogBase() {
     @Bean
     fun discordBot(
-        properties: DiscordProperties,
+        props: DiscordProperties,
         eventManager: CoroutineEventManager,
         eventListeners: Array<EventListener>,
         asyncEventListeners: Array<CoroutineEventListener>,
     ): JDABuilder = runBlocking {
-        val bot = JDABuilder.createDefault(properties.token)
+        val bot = JDABuilder.createDefault(props.token)
 
         log.atDebug {
             message =
