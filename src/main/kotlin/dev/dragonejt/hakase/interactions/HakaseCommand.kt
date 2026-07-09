@@ -17,6 +17,15 @@ import org.springframework.stereotype.Service
 class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScope) :
     ApplicationCommand, CoroutineEventListener, LogBase() {
 
+    companion object {
+        private val RPS_GIFS =
+            listOf(
+                "https://klipy.com/gifs/rock-everythingeverywhereallatonce-1",
+                "https://klipy.com/gifs/paper-plane-flying-original",
+                "https://klipy.com/gifs/the-amazing-world-of-gumball-gumball-and-darwin",
+            )
+    }
+
     override fun command() =
         Commands.slash("hakase", "hakase settings")
             .addOptions(
@@ -43,7 +52,12 @@ class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScop
             payload = mapOf("username" to event.user.effectiveName)
         }
 
-        event.reply("hakase pong!").await()
+        val cmdOption = event.getOption("cmd")?.asString
+        if (cmdOption == "rock-paper-scissors") {
+            event.reply(RPS_GIFS.random()).await()
+        } else {
+            event.reply("hakase pong!").await()
+        }
 
         scope.close()
         span.end()
