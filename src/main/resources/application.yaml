@@ -6,6 +6,7 @@ discord:
   token: ${DISCORD_BOT_TOKEN}
 
 ontology:
-  url: ${FOUNDRY_URL}
+  url: https://dragonejt.usw-16.palantirfoundry.com
+  client-id: 33976368fd8b43e534fd9e4b0a51c4c0
   token: ${FOUNDRY_AUTH_TOKEN}
 
