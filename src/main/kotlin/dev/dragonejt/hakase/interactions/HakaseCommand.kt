@@ -11,20 +11,14 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 @Service
 class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScope) :
     ApplicationCommand, CoroutineEventListener, LogBase() {
 
-    companion object {
-        private val RPS_GIFS =
-            listOf(
-                "https://klipy.com/gifs/rock-everythingeverywhereallatonce-1",
-                "https://klipy.com/gifs/paper-plane-flying-original",
-                "https://klipy.com/gifs/the-amazing-world-of-gumball-gumball-and-darwin",
-            )
-    }
+    @Value("\${discord-bot.rps-gifs}") private lateinit var rpsGifs: List<String>
 
     override fun command() =
         Commands.slash("hakase", "hakase settings")
@@ -34,7 +28,7 @@ class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScop
                         "config",
                         "hakase configuration",
                     )
-                    .addChoice("rps", "rock-paper-scissors")
+                    .addChoice("rps", "rps")
             )
 
     override suspend fun onEvent(event: GenericEvent) {
@@ -53,13 +47,16 @@ class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScop
         }
 
         val cmdOption = event.getOption("cmd")?.asString
-        if (cmdOption == "rock-paper-scissors") {
-            event.reply(RPS_GIFS.random()).await()
-        } else {
-            event.reply("hakase pong!").await()
+        when (cmdOption) {
+            "rps" -> event.reply(rps()).await()
+            else -> event.reply("hakase pong!").await()
         }
 
         scope.close()
         span.end()
+    }
+
+    private fun rps(): String {
+        return rpsGifs.random()
     }
 }
