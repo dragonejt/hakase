@@ -18,7 +18,8 @@ import org.springframework.stereotype.Service
 class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScope) :
     ApplicationCommand, CoroutineEventListener, LogBase() {
 
-    @Value("\${discord-bot.rps-gifs}") private lateinit var rpsGifs: List<String>
+    @Value("\${discord-bot.rps-gifs}")
+    private lateinit var rpsGifs: List<String>
 
     override fun command() =
         Commands.slash("hakase", "hakase settings")
