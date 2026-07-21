@@ -11,11 +11,14 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 @Service
 class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScope) :
     ApplicationCommand, CoroutineEventListener, LogBase() {
+
+    @Value("\${discord.rps-gifs}") private lateinit var rpsGifs: List<String>
 
     override fun command() =
         Commands.slash("hakase", "hakase settings")
@@ -23,9 +26,9 @@ class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScop
                 OptionData(OptionType.STRING, "cmd", "subcommand to run")
                     .addChoice(
                         "config",
-                        "hakase configuration",
+                        "config",
                     )
-                    .addChoice("rps", "rock-paper-scissors")
+                    .addChoice("rps", "rps")
             )
 
     override suspend fun onEvent(event: GenericEvent) {
@@ -43,9 +46,21 @@ class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScop
             payload = mapOf("username" to event.user.effectiveName)
         }
 
-        event.reply("hakase pong!").await()
+        val cmdOption = event.getOption("cmd")?.asString
+        when (cmdOption) {
+            "rps" -> rps(event)
+            else -> default(event)
+        }
 
         scope.close()
         span.end()
+    }
+
+    private suspend fun rps(event: SlashCommandInteractionEvent) {
+        event.reply(rpsGifs.random()).await()
+    }
+
+    private suspend fun default(event: SlashCommandInteractionEvent) {
+        event.reply("hakase pong!").await()
     }
 }
