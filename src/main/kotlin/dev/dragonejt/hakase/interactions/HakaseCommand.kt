@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service
 class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScope) :
     ApplicationCommand, CoroutineEventListener, LogBase() {
 
-    @Value("\${discord-bot.rps-gifs}") private lateinit var rpsGifs: List<String>
+    @Value("\${discord.rps-gifs}") private lateinit var rpsGifs: List<String>
 
     override fun command() =
         Commands.slash("hakase", "hakase settings")
@@ -26,7 +26,7 @@ class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScop
                 OptionData(OptionType.STRING, "cmd", "subcommand to run")
                     .addChoice(
                         "config",
-                        "hakase configuration",
+                        "config",
                     )
                     .addChoice("rps", "rps")
             )
@@ -48,15 +48,19 @@ class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScop
 
         val cmdOption = event.getOption("cmd")?.asString
         when (cmdOption) {
-            "rps" -> event.reply(rps()).await()
-            else -> event.reply("hakase pong!").await()
+            "rps" -> rps(event)
+            else -> default(event)
         }
 
         scope.close()
         span.end()
     }
 
-    private fun rps(): String {
-        return rpsGifs.random()
+    private suspend fun rps(event: SlashCommandInteractionEvent) {
+        event.reply(rpsGifs.random()).await()
+    }
+
+    private suspend fun default(event: SlashCommandInteractionEvent) {
+        event.reply("hakase pong!").await()
     }
 }
