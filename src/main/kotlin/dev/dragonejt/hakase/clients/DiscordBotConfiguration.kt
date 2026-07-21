@@ -14,7 +14,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
-@ConfigurationProperties(prefix = "discord") data class DiscordProperties(val token: String)
+@ConfigurationProperties(prefix = "discord")
+data class DiscordProperties(val token: String, val rpsGifs: List<String>)
 
 @Configuration
 @EnableConfigurationProperties(DiscordProperties::class)

@@ -23,7 +23,12 @@ class DiscordBotConfigurationTests {
 
     @Mock private lateinit var bot: JDABuilder
 
-    private val properties = DiscordProperties(token = "DISCORD_BOT_TOKEN")
+    private val properties =
+        DiscordProperties(
+            token = "DISCORD_BOT_TOKEN",
+            rpsGifs =
+                listOf("https://klipy.com/gifs/the-amazing-world-of-gumball-gumball-and-darwin"),
+        )
 
     @Mock private lateinit var eventManager: CoroutineEventManager
     private lateinit var eventListeners: Array<EventListener>

@@ -4,9 +4,10 @@ spring:
 
 discord:
   token: ${DISCORD_BOT_TOKEN}
-  rps-gifs: https://klipy.com/gifs/rock-everythingeverywhereallatonce-1,
-            https://klipy.com/gifs/paper-plane-flying-original,
-            https://klipy.com/gifs/the-amazing-world-of-gumball-gumball-and-darwin
+  rps-gifs:
+  - https://klipy.com/gifs/rock-everythingeverywhereallatonce-1
+  - https://klipy.com/gifs/paper-plane-flying-original
+  - https://klipy.com/gifs/the-amazing-world-of-gumball-gumball-and-darwin
 
 ontology:
   url: https://dragonejt.usw-16.palantirfoundry.com

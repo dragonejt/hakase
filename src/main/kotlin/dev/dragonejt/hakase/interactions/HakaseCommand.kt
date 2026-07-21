@@ -1,5 +1,6 @@
 package dev.dragonejt.hakase.interactions
 
+import dev.dragonejt.hakase.clients.DiscordProperties
 import dev.dragonejt.hakase.telemetry.LogBase
 import dev.minn.jda.ktx.coroutines.await
 import dev.minn.jda.ktx.events.CoroutineEventListener
@@ -11,24 +12,32 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Service
 
 @Service
-class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScope) :
-    ApplicationCommand, CoroutineEventListener, LogBase() {
+@EnableConfigurationProperties(DiscordProperties::class)
+class HakaseCommand(
+    private val tracer: Tracer,
+    private val scope: CoroutineScope,
+    private val props: DiscordProperties,
+) : ApplicationCommand, CoroutineEventListener, LogBase() {
 
-    @Value("\${discord.rps-gifs}") private lateinit var rpsGifs: List<String>
+    enum class SubCommand(val cmd: String?) {
+        CONFIG("config"),
+        RPS("rps"),
+        PONG(null),
+    }
 
     override fun command() =
         Commands.slash("hakase", "hakase settings")
             .addOptions(
                 OptionData(OptionType.STRING, "cmd", "subcommand to run")
                     .addChoice(
-                        "config",
-                        "config",
+                        SubCommand.CONFIG.cmd!!,
+                        SubCommand.CONFIG.cmd,
                     )
-                    .addChoice("rps", "rps")
+                    .addChoice(SubCommand.RPS.cmd!!, SubCommand.RPS.cmd)
             )
 
     override suspend fun onEvent(event: GenericEvent) {
@@ -46,9 +55,9 @@ class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScop
             payload = mapOf("username" to event.user.effectiveName)
         }
 
-        val cmdOption = event.getOption("cmd")?.asString
+        val cmdOption = SubCommand.entries.find { it.cmd == event.getOption("cmd")?.asString }
         when (cmdOption) {
-            "rps" -> rps(event)
+            SubCommand.RPS -> rps(event)
             else -> default(event)
         }
 
@@ -57,7 +66,7 @@ class HakaseCommand(private val tracer: Tracer, private val scope: CoroutineScop
     }
 
     private suspend fun rps(event: SlashCommandInteractionEvent) {
-        event.reply(rpsGifs.random()).await()
+        event.reply(props.rpsGifs.random()).await()
     }
 
     private suspend fun default(event: SlashCommandInteractionEvent) {
