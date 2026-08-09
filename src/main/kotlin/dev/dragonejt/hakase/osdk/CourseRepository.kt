@@ -11,9 +11,9 @@ import dev.dragonejt.hakase_sdk.actions.EditCourseActionRequest
 import dev.dragonejt.hakase_sdk.actions.EditCourseActionResponse
 import java.util.Optional
 import org.springframework.data.repository.CrudRepository
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Repository
 
-@Service
+@Repository
 @Suppress("TooManyFunctions")
 class CourseRepository(private val ontology: Ontology) : CrudRepository<Course, String> {
     override fun <S : Course> save(entity: S): S {
