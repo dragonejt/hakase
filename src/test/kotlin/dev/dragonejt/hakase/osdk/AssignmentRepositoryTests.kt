@@ -107,7 +107,7 @@ class AssignmentRepositoryTests {
         whenever { mockOsdkAssignment.due() }.thenReturn(Optional.of(assignment.dueDate))
         whenever { mockOsdkAssignment.name() }.thenReturn(Optional.of(assignment.name))
         whenever { mockOsdkAssignment.status() }.thenReturn(Optional.of(assignment.status))
-        whenever { mockOsdkAssignment.url() }.thenReturn(Optional.of(assignment.url))
+        whenever { mockOsdkAssignment.url() }.thenReturn(Optional.ofNullable(assignment.url))
         whenever { mockAssignment.fetch(assignment.id) }.thenReturn(Optional.of(mockOsdkAssignment))
 
         val mockActions = mock<OntologyActions>()
@@ -168,7 +168,7 @@ class AssignmentRepositoryTests {
         whenever { mockOsdkAssignment.due() }.thenReturn(Optional.of(assignment.dueDate))
         whenever { mockOsdkAssignment.name() }.thenReturn(Optional.of(assignment.name))
         whenever { mockOsdkAssignment.status() }.thenReturn(Optional.of(assignment.status))
-        whenever { mockOsdkAssignment.url() }.thenReturn(Optional.of(assignment.url))
+        whenever { mockOsdkAssignment.url() }.thenReturn(Optional.ofNullable(assignment.url))
 
         whenever { mockAssignment.fetch(assignment.id) }.thenReturn(Optional.of(mockOsdkAssignment))
 

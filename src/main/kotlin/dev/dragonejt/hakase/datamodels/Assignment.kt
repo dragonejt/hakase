@@ -6,5 +6,5 @@ data class Assignment(
     val dueDate: java.time.OffsetDateTime,
     val name: String,
     val status: String,
-    val url: String,
+    val url: String? = null,
 )

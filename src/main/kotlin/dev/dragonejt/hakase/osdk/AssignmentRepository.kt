@@ -18,12 +18,12 @@ class AssignmentRepository(private val ontology: Ontology) {
         val osdkAssignment = ontology.objects().Assignment().fetch(id)
         return osdkAssignment.map { assignment ->
             Assignment(
-                assignment.id().get(),
-                assignment.courseId().get(),
+                assignment.id().orElse(id),
+                assignment.courseId().orElse(""),
                 assignment.due().get(),
-                assignment.name().get(),
-                assignment.status().get(),
-                assignment.url().get(),
+                assignment.name().orElse("Untitled"),
+                assignment.status().orElse("Unknown"),
+                assignment.url().orElse(null),
             )
         }
     }
@@ -40,7 +40,7 @@ class AssignmentRepository(private val ontology: Ontology) {
                             .due(entity.dueDate)
                             .name(entity.name)
                             .status(entity.status)
-                            .url(entity.url)
+                            .url(entity.url ?: "")
                             .build()
                     )
             if (response.validationResult.validation.result == ValidationResult.VALID) {
@@ -59,7 +59,7 @@ class AssignmentRepository(private val ontology: Ontology) {
                             .due(entity.dueDate)
                             .name(entity.name)
                             .status(entity.status)
-                            .url(entity.url)
+                            .url(entity.url ?: "")
                             .build()
                     )
             if (response.validationResult.validation.result == ValidationResult.VALID) {
