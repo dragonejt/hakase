@@ -1,6 +1,6 @@
 package dev.dragonejt.hakase.clients
 
-import com.palantir.osdk.api.auth.ConfidentialClientAuth
+import com.palantir.osdk.api.UserTokenAuth
 import com.palantir.osdk.internal.api.FoundryConnectionConfig
 import dev.dragonejt.hakase.telemetry.LogBase
 import dev.dragonejt.hakase_sdk.FoundryClient
@@ -20,15 +20,10 @@ class OntologyConfiguration : LogBase() {
     @Bean
     fun ontology(props: OntologyProperties): Ontology {
         log.atDebug {
-            message =
-                "Building Palantir Ontology SDK Client with URL: ${props.url} and client ID: ${props.clientID}"
-            payload = mapOf("foundry_uri" to props.url, "foundry_client_id" to props.clientID)
+            message = "Building Palantir Ontology SDK Client with URL: ${props.url} and User Token"
+            payload = mapOf("foundry_uri" to props.url)
         }
-        val auth =
-            ConfidentialClientAuth.builder()
-                .clientId(props.clientID)
-                .clientSecret(props.token)
-                .build()
+        val auth = UserTokenAuth.builder().token(props.token).build()
         val connection = FoundryConnectionConfig.builder().foundryUri(props.url).build()
 
         return FoundryClient.builder().auth(auth).connectionConfig(connection).build().ontology()
