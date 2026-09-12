@@ -28,6 +28,32 @@ class AssignmentRepository(private val ontology: Ontology) {
         }
     }
 
+    fun findAllByCourseId(courseId: String): List<Assignment> {
+        val osdkAssignments =
+            ontology
+                .objects()
+                .Assignment()
+                .where(
+                    dev.dragonejt.hakase_sdk.objectsetqueries.AssignmentFilter.courseId()
+                        .eq(courseId)
+                )
+                .orderBy(dev.dragonejt.hakase_sdk.objectsetqueries.AssignmentOrdering.DUE_ASC)
+                .fetchStream()
+
+        return osdkAssignments
+            .map { assignment ->
+                Assignment(
+                    assignment.id().get(),
+                    assignment.courseId().orElse(""),
+                    assignment.due().get(),
+                    assignment.name().orElse("Untitled"),
+                    assignment.status().orElse("Unknown"),
+                    assignment.url().orElse(null),
+                )
+            }
+            .toList()
+    }
+
     fun save(entity: Assignment): Assignment {
         if (findById(entity.id).isPresent) {
             val response: EditAssignmentActionResponse =

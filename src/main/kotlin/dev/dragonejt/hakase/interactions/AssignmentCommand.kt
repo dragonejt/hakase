@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.Commands
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.modals.Modal
 import org.springframework.stereotype.Service
 
@@ -22,8 +23,17 @@ import org.springframework.stereotype.Service
 class AssignmentCommand(private val assignments: AssignmentRepository) :
     ApplicationCommand, CoroutineEventListener, LogBase() {
     override fun command() =
-        Commands.slash("assignments", "List all Assigments")
-            .addOption(OptionType.STRING, "assignment_id", "ID of the assignment to view")
+        Commands.slash("assignments", "Manage assignments")
+            .addSubcommands(
+                SubcommandData("view", "View an assignment or list all assignments")
+                    .addOption(
+                        OptionType.STRING,
+                        "assignment_id",
+                        "ID of the assignment to view",
+                        false,
+                    ),
+                SubcommandData("create", "Create a new assignment"),
+            )
 
     override suspend fun onEvent(event: GenericEvent) {
         if (event is ModalInteractionEvent && event.modalId == "create_assignment_modal") {
@@ -31,19 +41,49 @@ class AssignmentCommand(private val assignments: AssignmentRepository) :
             return
         }
 
-        if (event !is SlashCommandInteractionEvent || event.fullCommandName != command().name)
-            return
+        if (event !is SlashCommandInteractionEvent || event.name != command().name) return
 
-        when (val assignmentId = event.getOption("assignment_id")?.asString) {
-            null -> listAll(event)
+        when (event.subcommandName) {
+            "view" -> {
+                val assignmentId = event.getOption("assignment_id")?.asString
+                if (assignmentId == null) {
+                    listAll(event)
+                } else {
+                    viewAssignment(event, assignmentId)
+                }
+            }
             "create" -> createAssignment(event)
-            else -> viewAssignment(event, assignmentId)
         }
     }
 
-    @Suppress("UnusedPrivateMember", "UNUSED_PARAMETER")
+    @Suppress("MagicNumber")
     private suspend fun listAll(event: SlashCommandInteractionEvent) {
         event.deferReply().queue()
+
+        val courseId =
+            event.guild?.id
+                ?: run {
+                    event.hook.sendMessage("This command can only be used inside a server!").queue()
+                    return
+                }
+
+        val courseAssignments = assignments.findAllByCourseId(courseId)
+
+        if (courseAssignments.isEmpty()) {
+            event.hook.sendMessage("No assignments found for this course!").queue()
+            return
+        }
+
+        val embedBuilder =
+            net.dv8tion.jda.api.EmbedBuilder().setTitle("Assignments").setColor(0x5865F2)
+
+        courseAssignments.take(25).forEach { assignment ->
+            val value =
+                "Due: <t:${assignment.dueDate.toEpochSecond()}:F>\nStatus: ${assignment.status}\nID: `${assignment.id}`"
+            embedBuilder.addField(assignment.name, value, false)
+        }
+
+        event.hook.sendMessageEmbeds(embedBuilder.build()).queue()
     }
 
     private fun createAssignment(event: SlashCommandInteractionEvent) {
@@ -137,7 +177,7 @@ class AssignmentCommand(private val assignments: AssignmentRepository) :
         val embed =
             net.dv8tion.jda.api
                 .EmbedBuilder()
-                .setTitle(assignment.name, assignment.url?.ifBlank { null })
+                .setTitle(assignment.name, assignment.url)
                 .addField("Course ID", assignment.courseID, true)
                 .addField("Status", assignment.status, true)
                 .addField("Due Date", "<t:${assignment.dueDate.toEpochSecond()}:F>", false)
