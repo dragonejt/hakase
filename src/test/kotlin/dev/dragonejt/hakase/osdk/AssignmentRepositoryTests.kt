@@ -61,7 +61,7 @@ class AssignmentRepositoryTests {
                 org.mockito.Mockito.RETURNS_DEEP_STUBS,
             )
         whenever {
-                mockCreateAssignment.apply(
+                mockCreateAssignment.applyReturningEdits(
                     any<dev.dragonejt.hakase_sdk.actions.CreateAssignmentActionRequest>()
                 )
             }
@@ -69,6 +69,7 @@ class AssignmentRepositoryTests {
         whenever { mockResponse.validationResult.validation.result }
             .thenReturn(com.palantir.osdk.api.actions.ValidationResult.VALID)
         val mockEdits = mock<dev.dragonejt.hakase_sdk.actions.CreateAssignmentActionEditsResult>()
+        whenever { mockEdits.objectEdits }.thenReturn(Optional.empty())
         whenever { mockResponse.actionEdits }.thenReturn(Optional.of(mockEdits))
 
         val result = underTest.save(assignment)
@@ -77,7 +78,9 @@ class AssignmentRepositoryTests {
             { verify(mockAssignment).fetch(assignment.id) },
             {
                 verify(mockCreateAssignment)
-                    .apply(any<dev.dragonejt.hakase_sdk.actions.CreateAssignmentActionRequest>())
+                    .applyReturningEdits(
+                        any<dev.dragonejt.hakase_sdk.actions.CreateAssignmentActionRequest>()
+                    )
             },
             { assertThat(result).isEqualTo(assignment) },
         )
@@ -129,8 +132,6 @@ class AssignmentRepositoryTests {
             .thenReturn(mockResponse)
         whenever { mockResponse.validationResult.validation.result }
             .thenReturn(com.palantir.osdk.api.actions.ValidationResult.VALID)
-        val mockEdits = mock<dev.dragonejt.hakase_sdk.actions.EditAssignmentActionEditsResult>()
-        whenever { mockResponse.actionEdits }.thenReturn(Optional.of(mockEdits))
 
         val result = underTest.save(assignment)
 

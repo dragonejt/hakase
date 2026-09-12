@@ -111,7 +111,7 @@ class CourseRepository(private val ontology: Ontology) : CrudRepository<Course, 
         throw UnsupportedOperationException("Not implemented")
     }
 
-    override fun deleteAll(entities: Iterable<out Course>): Unit {
+    override fun deleteAll(entities: Iterable<Course>): Unit {
         throw UnsupportedOperationException("Not implemented")
     }
 

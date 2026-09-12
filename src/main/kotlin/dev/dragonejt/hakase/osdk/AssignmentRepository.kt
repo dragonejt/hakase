@@ -44,16 +44,14 @@ class AssignmentRepository(private val ontology: Ontology) {
                             .build()
                     )
             if (response.validationResult.validation.result == ValidationResult.VALID) {
-                if (response.actionEdits.isPresent) {
-                    return entity
-                }
+                return entity
             }
         } else {
             val response: CreateAssignmentActionResponse =
                 ontology
                     .actions()
                     .createAssignment()
-                    .apply(
+                    .applyReturningEdits(
                         CreateAssignmentActionRequest.builder()
                             .courseId(entity.courseID)
                             .due(entity.dueDate)
@@ -63,9 +61,18 @@ class AssignmentRepository(private val ontology: Ontology) {
                             .build()
                     )
             if (response.validationResult.validation.result == ValidationResult.VALID) {
-                if (response.actionEdits.isPresent) {
-                    return entity
-                }
+                val editsResult = response.actionEdits.orElse(null)
+                val objectEditsOpt = editsResult?.objectEdits
+
+                val generatedId =
+                    if (objectEditsOpt != null && objectEditsOpt.isPresent) {
+                        objectEditsOpt.get().addedObjects.firstOrNull()?.primaryKey?.toString()
+                            ?: entity.id
+                    } else {
+                        entity.id
+                    }
+
+                return entity.copy(id = generatedId)
             }
         }
 
