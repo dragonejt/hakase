@@ -35,6 +35,7 @@ repositories {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework.data:spring-data-commons")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("net.dv8tion:JDA:6.4.2")
     implementation("club.minnced:jda-ktx:0.14.2")
@@ -48,6 +49,7 @@ dependencies {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
         exclude(group = "com.palantir.sls.logging", module = "sls-logging-log4j-slf4j")
     }
+    
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
