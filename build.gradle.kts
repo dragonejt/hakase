@@ -3,7 +3,7 @@ plugins {
     kotlin("plugin.spring") version "2.4.0"
     id("org.springframework.boot") version "4.1.0"
     id("io.spring.dependency-management") version "1.1.7"
-    id("com.diffplug.spotless") version "8.6.0"
+    id("com.diffplug.spotless") version "8.10.3"
     jacoco
     id("dev.detekt") version "2.0.0-alpha.4"
     id("io.sentry.jvm.gradle") version "6.11.0"
@@ -37,14 +37,14 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.data:spring-data-commons")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("net.dv8tion:JDA:6.4.2")
-    implementation("club.minnced:jda-ktx:0.14.2")
-    implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
-    implementation("io.sentry:sentry-spring-boot-4:8.44.0")
-    implementation("io.sentry:sentry-async-profiler:8.44.0")
-    implementation("io.sentry:sentry-opentelemetry-otlp-spring:8.44.0")
+    implementation("net.dv8tion:JDA:6.7.0")
+    implementation("club.minnced:jda-ktx:0.15.0")
+    implementation("io.github.oshai:kotlin-logging-jvm:8.0.4")
+    implementation("io.sentry:sentry-spring-boot-4:8.58.0")
+    implementation("io.sentry:sentry-async-profiler:8.58.0")
+    implementation("io.sentry:sentry-opentelemetry-otlp-spring:8.58.0")
     implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
-    implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.28.1"))
+    implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.31.1"))
     implementation("dev.dragonejt:hakase-sdk:0.2.0") {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
         exclude(group = "com.palantir.sls.logging", module = "sls-logging-log4j-slf4j")
@@ -53,7 +53,7 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:6.3.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.4.0")
     testImplementation("org.assertj:assertj-core:3.27.7")
 
     // developmentOnly("org.springframework.boot:spring-boot-devtools")
