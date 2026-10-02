@@ -34,17 +34,24 @@ repositories {
 }
 
 dependencies {
+    // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.data:spring-data-commons")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+
+    // Java Discord API
     implementation("net.dv8tion:JDA:6.7.0")
     implementation("club.minnced:jda-ktx:0.15.0")
+
+    // OpenTelemetry
     implementation("io.github.oshai:kotlin-logging-jvm:8.0.4")
     implementation("io.sentry:sentry-spring-boot-4:8.58.0")
     implementation("io.sentry:sentry-async-profiler:8.58.0")
     implementation("io.sentry:sentry-opentelemetry-otlp-spring:8.58.0")
     implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
     implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.31.1"))
+
+    // Palantir OSDK
     implementation("dev.dragonejt:hakase-sdk:0.2.0") {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
         exclude(group = "com.palantir.sls.logging", module = "sls-logging-log4j-slf4j")
@@ -56,7 +63,6 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:6.4.0")
     testImplementation("org.assertj:assertj-core:3.27.7")
 
-    // developmentOnly("org.springframework.boot:spring-boot-devtools")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
