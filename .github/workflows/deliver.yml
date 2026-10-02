@@ -41,6 +41,7 @@ jobs:
           gradle bootBuildImage --no-daemon --imageName=${{ env.IMAGE_NAME }}:${{ env.GIT_REV }}
           docker push ${{ env.IMAGE_NAME }}:${{ env.GIT_REV }}
         env:
+          BP_NATIVE_IMAGE: true
           FOUNDRY_AUTH_TOKEN: ${{ secrets.FOUNDRY_AUTH_TOKEN }}
 
       - name: Create Sentry Release
