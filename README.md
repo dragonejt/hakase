@@ -40,14 +40,14 @@ This project uses [detekt](https://detekt.dev/) for linting and [ktfmt](https://
 The `integrate.yml` GitHub Actions workflow will check for linting errors and formatting mistakes as a part of the gradle build task.
 
 ## Deployment
-For deployment, hakase is built into a Docker image with [Heroku Cloud Native Buildpacks](https://github.com/heroku/cnb-builder-images), and then deployed into a container via Palantir Compute Modules.
+For deployment, hakase is built into a Docker image with [BellSoft Cloud Native Buildpacks](https://hub.docker.com/r/bellsoft/buildpacks.builder), and then deployed to [Dokku](https://dokku.com/) on the DigitalOcean droplet using the [Dokku GitHub Action](https://github.com/dokku/github-action).
 
 On the deployed docker container, the same environment variables should be set, with `ENV` now being `production`.
 
 ### Continuous Delivery
 hakase has a continuous delivery GitHub Actions workflow, `deliver.yml`. The steps taken are summarized:
 
-1. Build a Docker image with the [Heroku Cloud Native Buildpacks](https://github.com/heroku/cnb-builder-images)
-2. Publish the docker image to Palantir Artifacts.
-3. Select the latest docker image to run in the Palantir Compute Module
+1. Build a Docker image with the [BellSoft Cloud Native Buildpacks](https://hub.docker.com/r/bellsoft/buildpacks.builder)
+2. Publish the docker image to GitHub Container Registry.
+3. Deploy to [Dokku](https://dokku.com/) on the DigitalOcean droplet using the [Dokku GitHub Action](https://github.com/dokku/github-action).
 4. A new Sentry release is created for monitoring with the [Sentry Release GitHub Action](https://github.com/getsentry/action-release).
