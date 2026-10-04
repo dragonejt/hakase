@@ -36,11 +36,6 @@ jobs:
       - name: Set Docker Tag
         run: echo "GIT_REV=$(git rev-parse --short HEAD)" > "$GITHUB_ENV"
 
-      - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.10.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
       - name: Build and Push Docker Image
         run: |
           gradle bootBuildImage --no-daemon \

@@ -1,3 +1,5 @@
+import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
+
 plugins {
     kotlin("jvm") version "2.4.0"
     kotlin("plugin.spring") version "2.4.0"
@@ -87,4 +89,11 @@ tasks.jacocoTestReport {
     reports {
         xml.required.set(true)
     }
+}
+
+tasks.named<BootBuildImage>("bootBuildImage") {
+    buildpacks.set(listOf(
+        "docker.io/paketobuildpacks/eclipse-openj9",
+        "urn:cnb:builder:paketo-buildpacks/java" 
+    ))
 }
