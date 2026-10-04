@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  IMAGE_NAME: ${{ secrets.REGISTRY }}/hakase
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
 
 jobs:
   deploy:
@@ -17,12 +17,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Login to Container Registry
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v4
         with:
-          registry: ${{ secrets.REGISTRY }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.FOUNDRY_AUTH_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Java
         uses: actions/setup-java@v6
@@ -36,13 +36,24 @@ jobs:
       - name: Set Docker Tag
         run: echo "GIT_REV=$(git rev-parse --short HEAD)" > "$GITHUB_ENV"
 
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
       - name: Build and Push Docker Image
         run: |
-          gradle bootBuildImage --no-daemon --builder=bellsoft/buildpacks.builder:musl --imageName=${{ env.IMAGE_NAME }}:${{ env.GIT_REV }}
+          gradle bootBuildImage --no-daemon \
+          --builder=bellsoft/buildpacks.builder:musl \
+          --imageName=${{ env.IMAGE_NAME }}:${{ env.GIT_REV }}
           docker push ${{ env.IMAGE_NAME }}:${{ env.GIT_REV }}
-        env:
-          BP_NATIVE_IMAGE: true
-          FOUNDRY_AUTH_TOKEN: ${{ secrets.FOUNDRY_AUTH_TOKEN }}
+
+      - name: Deploy to Dokku
+        uses: dokku/github-action@master
+        with:
+          git_remote_url: ${{ secrets.GIT_REMOTE_URL }}
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          deploy_docker_image: ${{ env.IMAGE_NAME }}:${{ env.GIT_REV }}
 
       - name: Create Sentry Release
         uses: getsentry/action-release@v3
