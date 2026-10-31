@@ -1,0 +1,13 @@
+package dev.dragonejt.hakase.data
+
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
+
+@Entity
+data class Course(
+    @Id val courseId: String,
+    val notifyChannel: String,
+    val notifyGroup: String,
+    @OneToMany(mappedBy = "course") val assignments: MutableList<Assignment> = mutableListOf(),
+)

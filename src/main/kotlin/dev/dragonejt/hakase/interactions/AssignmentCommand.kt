@@ -1,12 +1,11 @@
 package dev.dragonejt.hakase.interactions
 
-import dev.dragonejt.hakase.datamodels.Assignment
-import dev.dragonejt.hakase.osdk.AssignmentRepository
+import dev.dragonejt.hakase.data.Assignment
+import dev.dragonejt.hakase.data.AssignmentRepository
+import dev.dragonejt.hakase.data.CourseRepository
 import dev.dragonejt.hakase.telemetry.LogBase
 import dev.minn.jda.ktx.events.CoroutineEventListener
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import kotlin.time.toKotlinInstant
 import net.dv8tion.jda.api.components.label.Label
 import net.dv8tion.jda.api.components.textinput.TextInput
 import net.dv8tion.jda.api.components.textinput.TextInputStyle
@@ -17,11 +16,14 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.modals.Modal
+import org.natty.Parser
 import org.springframework.stereotype.Service
 
 @Service
-class AssignmentCommand(private val assignments: AssignmentRepository) :
-    ApplicationCommand, CoroutineEventListener, LogBase() {
+class AssignmentCommand(
+    private val courses: CourseRepository,
+    private val assignments: AssignmentRepository,
+) : ApplicationCommand, CoroutineEventListener, LogBase() {
     override fun command() =
         Commands.slash("assignments", "Manage assignments")
             .addSubcommands(
@@ -49,7 +51,7 @@ class AssignmentCommand(private val assignments: AssignmentRepository) :
                 if (assignmentId == null) {
                     listAll(event)
                 } else {
-                    viewAssignment(event, assignmentId)
+                    viewAssignment(event, assignmentId.toLong())
                 }
             }
             "create" -> createAssignment(event)
@@ -66,8 +68,9 @@ class AssignmentCommand(private val assignments: AssignmentRepository) :
                     event.hook.sendMessage("This command can only be used inside a server!").queue()
                     return
                 }
+        val course = courses.findById(courseId).get()
 
-        val courseAssignments = assignments.findAllByCourseId(courseId)
+        val courseAssignments = course.assignments
 
         if (courseAssignments.isEmpty()) {
             event.hook.sendMessage("No assignments found for this course!").queue()
@@ -79,7 +82,7 @@ class AssignmentCommand(private val assignments: AssignmentRepository) :
 
         courseAssignments.take(25).forEach { assignment ->
             val value =
-                "Due: <t:${assignment.dueDate.toEpochSecond()}:F>\nStatus: ${assignment.status}\nID: `${assignment.id}`"
+                "Due: <t:${assignment.due}:F>\nStatus: ${assignment.status}\nID: `${assignment.id}`"
             embedBuilder.addField(assignment.name, value, false)
         }
 
@@ -93,7 +96,7 @@ class AssignmentCommand(private val assignments: AssignmentRepository) :
                 .build()
         val dueDate =
             TextInput.create("due_date", TextInputStyle.SHORT)
-                .setPlaceholder("MM-DD-YYYY HH:mm (24hr format)")
+                .setPlaceholder("e.g. tomorrow at 5pm")
                 .build()
         val url =
             TextInput.create("url", TextInputStyle.SHORT)
@@ -118,7 +121,6 @@ class AssignmentCommand(private val assignments: AssignmentRepository) :
         event.deferReply().queue()
 
         val name = event.getValue("name")?.asString ?: "Untitled"
-        val dueDateString = event.getValue("due_date")?.asString
         val url = event.getValue("url")?.asString?.ifBlank { null }
 
         if (url != null && !url.startsWith("http://") && !url.startsWith("https://")) {
@@ -138,21 +140,30 @@ class AssignmentCommand(private val assignments: AssignmentRepository) :
                 }
         val status = "Not Started"
 
-        val formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm")
-        val dueDate =
-            try {
-                LocalDateTime.parse(dueDateString, formatter)
-                    .atZone(ZoneId.systemDefault())
-                    .toOffsetDateTime()
-            } catch (e: java.time.format.DateTimeParseException) {
-                event.hook
-                    .sendMessage(
-                        "Invalid date format! \nPlease use MM-dd-yyyy HH:mm (e.g. `09-30-2026 23:59`)."
-                    )
-                    .queue()
-                return
-            }
-        val assignment = Assignment("", courseId, dueDate, name, status, url)
+        val dueDateInput = event.getValue("due_date")?.asString?.trim()
+        val parsedDueDate =
+            dueDateInput
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { Parser().parse(it).firstOrNull()?.dates?.firstOrNull() }
+
+        if (parsedDueDate == null) {
+            event.hook
+                .sendMessage(
+                    "I couldn't understand that due date. Try something like `tomorrow at 5pm`."
+                )
+                .queue()
+            return
+        }
+
+        val assignment =
+            Assignment(
+                null,
+                courses.findById(courseId).get(),
+                parsedDueDate.toInstant().toKotlinInstant(),
+                name,
+                status,
+                url,
+            )
         val savedAssignment = assignments.save(assignment)
 
         event.hook
@@ -162,7 +173,7 @@ class AssignmentCommand(private val assignments: AssignmentRepository) :
             .queue()
     }
 
-    private suspend fun viewAssignment(event: SlashCommandInteractionEvent, assignmentId: String) {
+    private suspend fun viewAssignment(event: SlashCommandInteractionEvent, assignmentId: Long) {
         event.deferReply().queue()
 
         val assignmentOpt = assignments.findById(assignmentId)
@@ -178,9 +189,9 @@ class AssignmentCommand(private val assignments: AssignmentRepository) :
             net.dv8tion.jda.api
                 .EmbedBuilder()
                 .setTitle(assignment.name, assignment.url)
-                .addField("Course ID", assignment.courseID, true)
+                .addField("Course ID", assignment.course.courseId, true)
                 .addField("Status", assignment.status, true)
-                .addField("Due Date", "<t:${assignment.dueDate.toEpochSecond()}:F>", false)
+                .addField("Due Date", "<t:${assignment.due}:F>", false)
                 .setFooter("ID: ${assignment.id}")
                 .setColor(0x5865F2)
                 .build()

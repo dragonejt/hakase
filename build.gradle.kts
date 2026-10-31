@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.4.0"
     kotlin("plugin.spring") version "2.4.0"
+    kotlin("plugin.jpa") version "2.4.0"
     id("org.springframework.boot") version "4.1.0"
     id("io.spring.dependency-management") version "1.1.7"
     id("com.diffplug.spotless") version "8.10.3"
@@ -13,35 +14,23 @@ group = "dev.dragonejt"
 
 version = "0.0.1-SNAPSHOT"
 
+extra["opentelemetry.version"] = "1.65.0"
+
 java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
 
 repositories {
     mavenCentral()     
-    maven {
-        url = uri("https://dragonejt.usw-16.palantirfoundry.com/artifacts/api/repositories/ri.artifacts.main.repository.b76916e1-ce85-4aa6-a9ca-f7af9e3a3a58/contents/release/maven/")
-        credentials {
-            username = ""
-            password = System.getenv("FOUNDRY_AUTH_TOKEN")
-        }
-    }
-    maven {
-        url = uri("https://dragonejt.usw-16.palantirfoundry.com/artifacts/api/repositories/ri.foundry-sdk-asset-bundle.main.artifacts.repository/contents/release/maven/")
-        credentials {
-            username = ""
-            password = System.getenv("FOUNDRY_AUTH_TOKEN")
-        }
-    }
 }
 
 dependencies {
     // Spring Boot
-    implementation("org.springframework.boot:spring-boot-starter")
-    implementation("org.springframework.data:spring-data-commons")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
-    // Java Discord API
     implementation("net.dv8tion:JDA:6.7.0")
     implementation("club.minnced:jda-ktx:0.15.0")
+    runtimeOnly("org.postgresql:postgresql")
+    implementation("io.github.natty-parser:natty:1.1.4")
 
     // OpenTelemetry
     implementation("io.github.oshai:kotlin-logging-jvm:8.0.4")
@@ -50,15 +39,9 @@ dependencies {
     implementation("io.sentry:sentry-opentelemetry-otlp-spring:8.58.0")
     implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
     implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.31.1"))
-
-    // Palantir OSDK
-    implementation("dev.dragonejt:hakase-sdk:0.2.0") {
-        exclude(group = "org.slf4j", module = "slf4j-log4j12")
-        exclude(group = "com.palantir.sls.logging", module = "sls-logging-log4j-slf4j")
-    }
     
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.mockito.kotlin:mockito-kotlin:6.4.0")
     testImplementation("org.assertj:assertj-core:3.27.7")

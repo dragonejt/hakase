@@ -1,6 +1,6 @@
 package dev.dragonejt.hakase.events
 
-import dev.dragonejt.hakase.osdk.CourseRepository
+import dev.dragonejt.hakase.data.CourseRepository
 import dev.dragonejt.hakase.telemetry.LogBase
 import dev.minn.jda.ktx.events.CoroutineEventListener
 import io.opentelemetry.api.trace.SpanKind
