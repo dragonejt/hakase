@@ -8,6 +8,7 @@ plugins {
     jacoco
     id("dev.detekt") version "2.0.0-alpha.4"
     id("io.sentry.jvm.gradle") version "6.11.0"
+    id("org.sonarqube") version "7.5.0.8588"
 }
 
 group = "dev.dragonejt"
@@ -70,4 +71,11 @@ tasks.jacocoTestReport {
     reports {
         xml.required.set(true)
     }
+}
+
+sonar {
+  properties {
+    property("sonar.projectKey", "dragonejt_hakase")
+    property("sonar.organization", "dragonejt")
+  }
 }
