@@ -1,6 +1,6 @@
 # hakase-discord
-[![codacy](https://app.codacy.com/project/badge/Grade/dc0e8d6ee88549f3b6f58b5c66d39040)](https://app.codacy.com/gh/dragonejt/hakase/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-[![coverage](https://app.codacy.com/project/badge/Coverage/dc0e8d6ee88549f3b6f58b5c66d39040)](https://app.codacy.com/gh/dragonejt/hakase/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage)
+[![sonar](https://sonarcloud.io/api/project_badges/measure?project=dragonejt_hakase&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dragonejt_hakase)
+[![coverage](https://sonarcloud.io/api/project_badges/measure?project=dragonejt_hakase&metric=coverage)](https://sonarcloud.io/summary/new_code?id=dragonejt_hakase)
 [![integration](https://github.com/dragonejt/hakase/actions/workflows/integrate.yml/badge.svg)](https://github.com/dragonejt/hakase/actions/workflows/integrate.yml)
 [![delivery](https://github.com/dragonejt/hakase/actions/workflows/deliver.yml/badge.svg)](https://github.com/dragonejt/hakase/actions/workflows/deliver.yml)
 
@@ -14,10 +14,9 @@ To start off in VS Code, install the [Kotlin by JetBrains](https://marketplace.v
 ```
 You do have to have some environment variables in place. hakase does not directly read from a .env file, but you can configure environment variables or reference a .env file through IDE launch options. Otherwise, you can set environment variables locally.
 ```sh
-ENV="development"
+SPRING_PROFILES_ACTIVE="dev"
 DISCORD_BOT_TOKEN="from Discord Dev Portal"
-BACKEND_URL="from Backend API"
-BACKEND_AUTH_TOKEN="from Backend API"
+DATABASE_URL="from PostgreSQL Database"
 ```
 To only build the project without running the Spring Boot application, run the following:
 ```bash
