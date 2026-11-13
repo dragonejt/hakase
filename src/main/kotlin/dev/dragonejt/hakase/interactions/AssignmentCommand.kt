@@ -1,22 +1,33 @@
 package dev.dragonejt.hakase.interactions
 
+import dev.dragonejt.hakase.data.Assignment
 import dev.dragonejt.hakase.data.AssignmentRepository
 import dev.dragonejt.hakase.data.CourseRepository
-import dev.dragonejt.hakase.telemetry.LogBase
+import dev.dragonejt.hakase.displays.Display
 import dev.minn.jda.ktx.events.CoroutineEventListener
+import io.opentelemetry.api.trace.SpanKind
+import io.opentelemetry.api.trace.Tracer
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.Commands
+import org.apache.logging.log4j.kotlin.Logging
+import org.apache.logging.log4j.message.StringMapMessage
 import org.springframework.stereotype.Service
 
 @Service
 class AssignmentCommand(
+    private val tracer: Tracer,
     private val courses: CourseRepository,
     private val assignments: AssignmentRepository,
-) : ApplicationCommand, CoroutineEventListener, LogBase() {
+    private val assignmentsDisplay: Display<List<Assignment>>,
+    private val assignmentDisplay: Display<Assignment>,
+) : ApplicationCommand, CoroutineEventListener {
+
+    companion object : Logging
+
     override fun command() =
-        Commands.slash("assignments", "Manage assignments")
+        Commands.slash("assignments", "manage assignments")
             .addOption(
                 OptionType.STRING,
                 "id",
@@ -25,14 +36,33 @@ class AssignmentCommand(
             )
 
     override suspend fun onEvent(event: GenericEvent) {
+        val span =
+            tracer
+                .spanBuilder("events.${this.javaClass.simpleName}")
+                .setSpanKind(SpanKind.SERVER)
+                .startSpan()
+        val scope = span.makeCurrent()
+
         if (event !is SlashCommandInteractionEvent || event.name != command().name) return
+        event.deferReply().queue()
 
         val assignmentId = event.getOption("id")
+        logger.info(
+            StringMapMessage()
+                .with("message", "/assignments has been executed")
+                .with("assignment_id", assignmentId?.asLong)
+                .with("course_id", event.guild?.id)
+                .with("user", event.user.name)
+        )
+
         if (assignmentId == null) {
             listAll(event)
         } else {
             viewAssignment(event, assignmentId.asLong)
         }
+
+        scope.close()
+        span.end()
     }
 
     private suspend fun listAll(event: SlashCommandInteractionEvent) {
@@ -43,24 +73,10 @@ class AssignmentCommand(
                     return
                 }
         val course = courses.findById(courseId).get()
-
-        val courseAssignments = course.assignments
-
-        if (courseAssignments.isEmpty()) {
-            event.hook.sendMessage("No assignments found for this course!").queue()
-            return
-        }
-
-        val embedBuilder =
-            net.dv8tion.jda.api.EmbedBuilder().setTitle("Assignments").setColor(0x5865F2)
-
-        courseAssignments.forEach { assignment ->
-            val value =
-                "Due: <t:${assignment.due}:F>\nStatus: ${assignment.status}\nID: `${assignment.id}`"
-            embedBuilder.addField(assignment.name, value, false)
-        }
-
-        event.hook.sendMessageEmbeds(embedBuilder.build()).queue()
+        event.hook
+            .sendMessageEmbeds(assignmentsDisplay.embed(course.assignments))
+            .addComponents(assignmentsDisplay.component(course.assignments))
+            .queue()
     }
 
     private suspend fun viewAssignment(event: SlashCommandInteractionEvent, assignmentId: Long) {
@@ -71,17 +87,9 @@ class AssignmentCommand(
                 return
             }
 
-        val embed =
-            net.dv8tion.jda.api
-                .EmbedBuilder()
-                .setTitle(assignment.name, assignment.url)
-                .addField("Course ID", assignment.course.courseId, true)
-                .addField("Status", assignment.status, true)
-                .addField("Due Date", "<t:${assignment.due}:F>", false)
-                .setFooter("ID: ${assignment.id}")
-                .setColor(0x5865F2)
-                .build()
-
-        event.hook.sendMessageEmbeds(embed).queue()
+        event.hook
+            .sendMessageEmbeds(assignmentDisplay.embed(assignment))
+            .addComponents(assignmentDisplay.component(assignment))
+            .queue()
     }
 }

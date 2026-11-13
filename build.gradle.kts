@@ -23,9 +23,16 @@ repositories {
     mavenCentral()     
 }
 
+configurations {
+    all {
+        exclude(group = "org.springframework.boot", module = "spring-boot-starter-logging")
+    }
+}
+
 dependencies {
     // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-log4j2")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     implementation("net.dv8tion:JDA:6.7.0")
@@ -34,7 +41,7 @@ dependencies {
     implementation("io.github.natty-parser:natty:1.1.4")
 
     // OpenTelemetry
-    implementation("io.github.oshai:kotlin-logging-jvm:8.0.4")
+    implementation("org.apache.logging.log4j:log4j-api-kotlin:1.5.0")
     implementation("io.sentry:sentry-spring-boot-4:8.58.0")
     implementation("io.sentry:sentry-async-profiler:8.58.0")
     implementation("io.sentry:sentry-opentelemetry-otlp-spring:8.58.0")

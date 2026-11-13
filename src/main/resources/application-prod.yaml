@@ -15,10 +15,10 @@ sentry:
 otel:
   propagators: sentry
   instrumentation:
-    logback-appender:
+    log4j-appender:
       enabled: true
       experimental:
-        capture-key-value-pair-attributes: true
+        capture-map-message-attributes: true
   exporter:
     otlp:
       traces:

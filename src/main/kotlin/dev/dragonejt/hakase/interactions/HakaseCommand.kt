@@ -1,7 +1,6 @@
 package dev.dragonejt.hakase.interactions
 
 import dev.dragonejt.hakase.clients.DiscordProperties
-import dev.dragonejt.hakase.telemetry.LogBase
 import dev.minn.jda.ktx.coroutines.await
 import dev.minn.jda.ktx.events.CoroutineEventListener
 import io.opentelemetry.api.trace.SpanKind
@@ -12,6 +11,8 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
+import org.apache.logging.log4j.kotlin.Logging
+import org.apache.logging.log4j.message.StringMapMessage
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Service
 
@@ -21,7 +22,8 @@ class HakaseCommand(
     private val tracer: Tracer,
     private val scope: CoroutineScope,
     private val props: DiscordProperties,
-) : ApplicationCommand, CoroutineEventListener, LogBase() {
+) : ApplicationCommand, CoroutineEventListener {
+    companion object : Logging
 
     enum class SubCommand(val cmd: String?) {
         CONFIG("config"),
@@ -50,10 +52,11 @@ class HakaseCommand(
                 .setSpanKind(SpanKind.SERVER)
                 .startSpan()
         val scope = span.makeCurrent()
-        log.atInfo {
-            message = "/hakase executed by: ${event.user.effectiveName}"
-            payload = mapOf("username" to event.user.effectiveName)
-        }
+        logger.info(
+            StringMapMessage()
+                .with("message", "/hakase executed by: ${event.user.effectiveName}")
+                .with("username", event.user.effectiveName)
+        )
 
         val cmdOption = SubCommand.entries.find { it.cmd == event.getOption("cmd")?.asString }
         when (cmdOption) {
