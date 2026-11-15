@@ -1,7 +1,7 @@
 package dev.dragonejt.hakase.clients
 
 import dev.dragonejt.hakase.interactions.ApplicationCommand
-import dev.dragonejt.hakase.telemetry.LogBase
+import dev.dragonejt.hakase.observability.Logging
 import java.util.concurrent.atomic.AtomicBoolean
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
@@ -12,16 +12,18 @@ import org.springframework.stereotype.Component
 class DiscordBotLifecycle(
     private val botConfig: JDABuilder,
     private val commands: List<ApplicationCommand>,
-) : SmartLifecycle, LogBase() {
+) : SmartLifecycle {
+    companion object : Logging
+
     private lateinit var bot: JDA
     private var running = AtomicBoolean(false)
 
     override fun start() {
         if (isRunning()) return
 
-        log.info { "Starting Discord Bot..." }
+        logger.info { "Starting Discord Bot..." }
         bot = botConfig.build()
-        log.atDebug {
+        logger.atDebug {
             message =
                 "Registering Application Commands: " +
                     commands.map { command -> command.javaClass.simpleName }
@@ -39,7 +41,7 @@ class DiscordBotLifecycle(
     override fun stop(callback: Runnable) {
         if (!isRunning()) return
 
-        log.info { "Stopping Discord Bot..." }
+        logger.info { "Stopping Discord Bot..." }
         bot.shutdown()
         bot.awaitShutdown()
         running.set(false)

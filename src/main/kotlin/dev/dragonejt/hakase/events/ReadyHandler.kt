@@ -1,6 +1,6 @@
 package dev.dragonejt.hakase.events
 
-import dev.dragonejt.hakase.telemetry.LogBase
+import dev.dragonejt.hakase.observability.Logging
 import dev.minn.jda.ktx.events.CoroutineEventListener
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.Tracer
@@ -10,7 +10,8 @@ import net.dv8tion.jda.api.events.session.ReadyEvent
 import org.springframework.stereotype.Service
 
 @Service
-class ReadyHandler(private val tracer: Tracer) : CoroutineEventListener, LogBase() {
+class ReadyHandler(private val tracer: Tracer) : CoroutineEventListener {
+    companion object : Logging
 
     override suspend fun onEvent(event: GenericEvent) {
         if (event !is ReadyEvent) return
@@ -22,7 +23,7 @@ class ReadyHandler(private val tracer: Tracer) : CoroutineEventListener, LogBase
                 .startSpan()
         val scope = span.makeCurrent()
 
-        log.atInfo {
+        logger.atInfo {
             message = "Logged in as ${event.jda.selfUser.name}!"
             payload = mapOf("bot_user" to event.jda.selfUser.name)
         }

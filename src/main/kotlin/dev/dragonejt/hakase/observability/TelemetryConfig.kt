@@ -1,4 +1,4 @@
-package dev.dragonejt.hakase.telemetry
+package dev.dragonejt.hakase.observability
 
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.trace.Tracer

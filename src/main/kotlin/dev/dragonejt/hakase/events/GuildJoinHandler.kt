@@ -2,7 +2,7 @@ package dev.dragonejt.hakase.events
 
 import dev.dragonejt.hakase.data.Course
 import dev.dragonejt.hakase.data.CourseRepository
-import dev.dragonejt.hakase.telemetry.LogBase
+import dev.dragonejt.hakase.observability.Logging
 import dev.minn.jda.ktx.events.CoroutineEventListener
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.Tracer
@@ -13,7 +13,8 @@ import org.springframework.stereotype.Service
 
 @Service
 class GuildJoinHandler(private val tracer: Tracer, private val courses: CourseRepository) :
-    CoroutineEventListener, LogBase() {
+    CoroutineEventListener {
+    companion object : Logging
 
     override suspend fun onEvent(event: GenericEvent) {
         if (event !is GuildJoinEvent) return
@@ -25,7 +26,7 @@ class GuildJoinHandler(private val tracer: Tracer, private val courses: CourseRe
                 .startSpan()
         val scope = span.makeCurrent()
 
-        log.atInfo {
+        logger.atInfo {
             message = "Bot joined guild ${event.guild.name} (${event.guild.id})"
             payload = mapOf("guild_name" to event.guild.name, "guild_id" to event.guild.id)
         }

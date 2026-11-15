@@ -8,7 +8,6 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertAll
 import org.junit.jupiter.api.extension.ExtendWith
@@ -39,8 +38,7 @@ class DiscordBotLifecycleTests {
     }
 
     @Test
-    @DisplayName("start() correctly initializes JDA bot")
-    fun testStartInitializesBot() {
+    fun `start() correctly initializes JDA bot`() {
         underTest.start()
 
         assertAll(
@@ -51,8 +49,7 @@ class DiscordBotLifecycleTests {
     }
 
     @Test
-    @DisplayName("start() correctly registers app commands")
-    fun testStartRegistersCommands() {
+    fun `start() correctly registers app commands`() {
         underTest.start()
 
         assertAll(
@@ -62,8 +59,7 @@ class DiscordBotLifecycleTests {
     }
 
     @Test
-    @DisplayName("stop() correctly stops discord bot")
-    fun testStopStopsDiscordBot() {
+    fun `stop() correctly stops discord bot`() {
         underTest.start()
         assertThat(underTest.isRunning()).isTrue()
 
@@ -77,8 +73,7 @@ class DiscordBotLifecycleTests {
     }
 
     @Test
-    @DisplayName("stop() runs callback after stop")
-    fun testStopRunsCallback() {
+    fun `stop() runs callback after stop`() {
         underTest.start()
         assertThat(underTest.isRunning()).isTrue()
 

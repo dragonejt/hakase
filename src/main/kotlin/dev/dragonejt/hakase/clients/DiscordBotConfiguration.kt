@@ -1,6 +1,6 @@
 package dev.dragonejt.hakase.clients
 
-import dev.dragonejt.hakase.telemetry.LogBase
+import dev.dragonejt.hakase.observability.Logging
 import dev.minn.jda.ktx.events.CoroutineEventListener
 import dev.minn.jda.ktx.events.CoroutineEventManager
 import kotlinx.coroutines.CoroutineScope
@@ -19,7 +19,9 @@ data class DiscordProperties(val token: String, val rpsGifs: List<String>)
 
 @Configuration
 @EnableConfigurationProperties(DiscordProperties::class)
-class DiscordBotConfiguration : LogBase() {
+class DiscordBotConfiguration {
+    companion object : Logging
+
     @Bean
     fun discordBot(
         props: DiscordProperties,
@@ -29,7 +31,7 @@ class DiscordBotConfiguration : LogBase() {
     ): JDABuilder = runBlocking {
         val bot = JDABuilder.createDefault(props.token)
 
-        log.atDebug {
+        logger.atDebug {
             message =
                 "Registering Event Listeners: " +
                     arrayOf(*eventListeners, *asyncEventListeners).map { event ->

@@ -1,7 +1,7 @@
 package dev.dragonejt.hakase.interactions
 
 import dev.dragonejt.hakase.clients.DiscordProperties
-import dev.dragonejt.hakase.telemetry.LogBase
+import dev.dragonejt.hakase.observability.Logging
 import dev.minn.jda.ktx.coroutines.await
 import dev.minn.jda.ktx.events.CoroutineEventListener
 import io.opentelemetry.api.trace.SpanKind
@@ -21,7 +21,8 @@ class HakaseCommand(
     private val tracer: Tracer,
     private val scope: CoroutineScope,
     private val props: DiscordProperties,
-) : ApplicationCommand, CoroutineEventListener, LogBase() {
+) : ApplicationCommand, CoroutineEventListener {
+    companion object : Logging
 
     enum class SubCommand(val cmd: String?) {
         CONFIG("config"),
@@ -50,7 +51,7 @@ class HakaseCommand(
                 .setSpanKind(SpanKind.SERVER)
                 .startSpan()
         val scope = span.makeCurrent()
-        log.atInfo {
+        logger.atInfo {
             message = "/hakase executed by: ${event.user.effectiveName}"
             payload = mapOf("username" to event.user.effectiveName)
         }

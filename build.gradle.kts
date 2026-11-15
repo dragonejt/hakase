@@ -33,7 +33,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     implementation("io.github.natty-parser:natty:1.1.4")
 
-    // OpenTelemetry
+    // Observability
     implementation("io.github.oshai:kotlin-logging-jvm:8.0.4")
     implementation("io.sentry:sentry-spring-boot-4:8.58.0")
     implementation("io.sentry:sentry-async-profiler:8.58.0")
@@ -43,10 +43,7 @@ dependencies {
     
 
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.mockito.kotlin:mockito-kotlin:6.4.0")
-    testImplementation("org.assertj:assertj-core:3.27.7")
-
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 

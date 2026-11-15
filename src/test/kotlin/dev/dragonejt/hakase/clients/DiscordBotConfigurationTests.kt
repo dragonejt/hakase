@@ -6,7 +6,6 @@ import kotlin.random.Random
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.hooks.EventListener
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertAll
 import org.junit.jupiter.api.extension.ExtendWith
@@ -52,8 +51,7 @@ class DiscordBotConfigurationTests {
     }
 
     @Test
-    @DisplayName("Proper event handlers and interaction handlers are loaded")
-    fun testHandlersLoaded() {
+    fun `proper event handlers and interaction handlers are loaded`() {
         mockStatic(JDABuilder::class.java).use { botBuilder ->
             botBuilder.whenever { JDABuilder.createDefault(any<String>()) }.thenReturn(bot)
 
