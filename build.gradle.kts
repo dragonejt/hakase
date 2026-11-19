@@ -31,7 +31,6 @@ dependencies {
     implementation("net.dv8tion:JDA:6.7.0")
     implementation("club.minnced:jda-ktx:0.15.0")
     runtimeOnly("org.postgresql:postgresql")
-    implementation("io.github.natty-parser:natty:1.1.4")
 
     // Observability
     implementation("io.github.oshai:kotlin-logging-jvm:8.0.4")
