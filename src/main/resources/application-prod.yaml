@@ -21,14 +21,9 @@ otel:
         capture-key-value-pair-attributes: true
   exporter:
     otlp:
-      traces:
-        endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces
-        protocol: http/protobuf
-        headers: ${OTEL_EXPORTER_OTLP_HEADERS}
-      logs:
-        endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/logs
-        protocol: http/protobuf
-        headers: ${OTEL_EXPORTER_OTLP_HEADERS}
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      protocol: http/protobuf
+      headers: ${OTEL_EXPORTER_OTLP_HEADERS}
   traces:
     exporter: otlp
   logs:
